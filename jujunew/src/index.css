@@ -1,0 +1,417 @@
+:root {
+  --bg-blue: #142850;
+  --card-gradient: linear-gradient(145deg, #1E3A8A, #8E2DE2);
+  --lavender: #C8A2C8;
+  --button-purple: #9D4EDD;
+  --button-hover: #C77DFF;
+  --light-text: #EAEAEA;
+  --soft-white: #F5F7FA;
+  --shadow-purple: rgba(142, 45, 226, 0.3);
+
+  font-family: 'Poppins', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--light-text);
+  background-color: var(--bg-blue);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / old Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+html {
+  scroll-behavior: smooth;
+  cursor: none;
+}
+
+body {
+  min-height: 100vh;
+  background: radial-gradient(circle at 30% 30%, #1E3A8A, #142850 60%);
+  background-attachment: fixed;
+  overflow-x: hidden;
+  cursor: none;
+  position: relative;
+}
+
+/* ── Scroll lock when modal is open (no pointer blocking!) ── */
+body.modal-open {
+  overflow: hidden;
+}
+
+/* Restore default cursor during video playback */
+body.video-playing,
+body.video-playing * {
+  cursor: auto !important;
+}
+
+body.video-playing .custom-cursor-dot {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Floating Blur Circles */
+.bg-circles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(200, 162, 200, 0.15);
+  filter: blur(80px);
+  animation: float 20s infinite ease-in-out;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0) translateX(0) scale(1);
+  }
+
+  33% {
+    transform: translateY(-50px) translateX(50px) scale(1.1);
+  }
+
+  66% {
+    transform: translateY(50px) translateX(-50px) scale(0.9);
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 4px 30px var(--shadow-purple);
+  }
+
+  to {
+    box-shadow: 0 4px 50px rgba(142, 45, 226, 0.5);
+  }
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #C8A2C8 0%, #FFFFFF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 15px rgba(200, 162, 200, 0.3));
+}
+
+.subtext {
+  color: var(--light-text);
+  opacity: 0.8;
+}
+
+/* GPU acceleration for canvas elements */
+canvas {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  pointer-events: none;
+}
+
+.starfield-container {
+  contain: strict;
+  isolation: isolate;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INTERACTION LAYER FIX
+   Ensures all decorative / background overlays pass through
+   mouse events, while interactive elements remain clickable.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. Background / overlay layers: let clicks pass through ── */
+#tsparticles,
+#tsparticles canvas,
+.starfield-container,
+.starfield-container canvas,
+.bg-circles,
+.bg-circles .circle,
+.custom-cursor-dot {
+  pointer-events: none !important;
+}
+
+/* ── 2. Footer: always clickable above decorative layers ── */
+.minimal-footer {
+  position: relative;
+  z-index: 9999;
+  pointer-events: auto !important;
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* Ensure the inner wrapper never exceeds parent width */
+.minimal-footer__inner {
+  box-sizing: border-box;
+}
+
+.minimal-footer a,
+.minimal-footer button,
+.minimal-footer [role="button"] {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+/* ── 3. Privacy link: explicit interactivity + underline on hover ── */
+.footer-privacy-link {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-privacy-link:hover {
+  text-decoration: underline;
+}
+
+/* ── 4. Global cursor visibility for interactive elements ── */
+a, button, [role="button"], input, textarea, select, label {
+  cursor: pointer;
+}
+
+/* ── 5. Framer-motion & portal wrappers: never block footer ──
+   AnimatePresence may inject wrapper divs at the body level;
+   if they sit above the footer in DOM order they can steal
+   pointer events.  This rule makes them transparent to
+   the mouse unless a child explicitly opts in. */
+.pp-modal-wrapper {
+  pointer-events: none !important;
+}
+
+.pp-modal-wrapper .pp-modal-body {
+  pointer-events: auto !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Mobile-only: Smooth blue→green background merge overlay
+   Creates a premium gradient transition between the blue Hero
+   section and the green HangingTimeline column on mobile.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* ═══════════════════════════════════════════════════════════════
+   * Mobile-only: Section Spacing and Divider Fix
+   * Removes gap and dividing line between Hero and Hanging Gallery
+   * ═══════════════════════════════════════════════════════════════ */
+  .hero {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hanging-gallery,
+  .timeline {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .hanging-gallery {
+    border: none !important;
+    box-shadow: none !important;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero::after,
+  .hanging-gallery::before,
+  .section-divider {
+    content: none !important;
+    display: none !important;
+  }
+
+  .hero + .hanging-gallery {
+    margin-top: -1px !important;
+  }
+
+  .content-split {
+    position: relative;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * Mobile-only: Smooth blue→green background merge overlay
+   * Creates a continuous, premium gradient transition between the 
+   * blue Hero section and the green HangingTimeline column.
+   * ═══════════════════════════════════════════════════════════════ */
+  .content-split::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 450px;
+    background: linear-gradient(
+      to bottom,
+      #142850 0%,
+      rgba(16, 38, 70, 0.9) 15%,
+      rgba(12, 32, 55, 0.75) 30%,
+      rgba(8, 28, 42, 0.55) 45%,
+      rgba(5, 26, 32, 0.35) 65%,
+      rgba(3, 26, 26, 0.15) 85%,
+      transparent 100%
+    );
+    pointer-events: none;
+    z-index: 2;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 50%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0%, black 50%, transparent 100%);
+  }
+
+  .content-split::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 450px;
+    background-image: 
+      radial-gradient(circle at 20% 20%, rgba(132, 250, 176, 0.05) 0%, transparent 5%),
+      radial-gradient(circle at 80% 30%, rgba(143, 211, 244, 0.04) 0%, transparent 7%),
+      radial-gradient(circle at 40% 60%, rgba(132, 250, 176, 0.03) 0%, transparent 5%),
+      radial-gradient(circle at 15% 70%, rgba(143, 211, 244, 0.04) 0%, transparent 6%),
+      radial-gradient(circle at 85% 85%, rgba(132, 250, 176, 0.03) 0%, transparent 5%);
+    background-size: 100% 100%;
+    pointer-events: none;
+    z-index: 3;
+    animation: driftParticles 18s infinite alternate ease-in-out;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   * Mobile-only: Hanging Gallery Title Enhancements
+   * High-contrast, glassmorphism, readability improvements
+   * ═══════════════════════════════════════════════════════════════ */
+  .hanging-gallery-title {
+    background: none !important;
+    background-color: transparent !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    color: #FFFFFF !important;
+    text-shadow: 0px 4px 15px rgba(0, 0, 0, 0.6), 0 0 25px rgba(255, 255, 255, 0.4) !important;
+    font-weight: 700 !important;
+    letter-spacing: 1.5px !important;
+    
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 10px 0 !important;
+    
+    /* Shift text vertically to avoid transition midpoint conflict */
+    transform: translateY(20px) !important;
+    
+    display: inline-block;
+    width: auto !important;
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.4 !important;
+  }
+  
+  .hanging-gallery-title-glow {
+    display: none !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     Mobile-only: Green to Blue section transition
+     Blends the bottom of HangingTimeline (green) into MemoryTimeline (blue)
+     ═══════════════════════════════════════════════════════════════ */
+  .column-right::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 250px;
+    background: linear-gradient(
+      to bottom,
+      #065f46 0%,
+      rgba(6, 95, 70, 0.95) 15%,
+      rgba(6, 85, 75, 0.8) 35%,
+      rgba(9, 65, 80, 0.5) 60%,
+      rgba(15, 45, 80, 0.2) 80%,
+      transparent 100%
+    );
+    pointer-events: none;
+    z-index: 0;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .column-right::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 250px;
+    background-image: 
+      radial-gradient(circle at 15% 25%, rgba(132, 250, 176, 0.15) 0%, transparent 6%),
+      radial-gradient(circle at 85% 35%, rgba(143, 211, 244, 0.12) 0%, transparent 8%),
+      radial-gradient(circle at 45% 65%, rgba(132, 250, 176, 0.1) 0%, transparent 5%),
+      radial-gradient(circle at 10% 75%, rgba(143, 211, 244, 0.08) 0%, transparent 7%),
+      radial-gradient(circle at 75% 85%, rgba(132, 250, 176, 0.1) 0%, transparent 6%);
+    background-size: 100% 100%;
+    pointer-events: none;
+    z-index: 0;
+    animation: driftParticles 12s infinite alternate ease-in-out;
+  }
+}
+
+@keyframes driftParticles {
+  0% {
+    background-position: 0px 0px, 0px 0px, 0px 0px, 0px 0px, 0px 0px;
+  }
+  100% {
+    background-position: 15px 25px, -20px 15px, 20px -20px, -15px -10px, 10px -15px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Dynamic Gap Filler — appears only on vertical viewport resize
+   when a gap is detected between timeline and questionnaire.
+   Conditionally rendered (not visually hidden), so zero layout
+   impact when not present.
+   ═══════════════════════════════════════════════════════════════ */
+.gap-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.gap-image .photo-card {
+  transition: box-shadow 0.3s ease;
+}
+
+.gap-image img {
+  width: 100%;
+  border-radius: 2px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
