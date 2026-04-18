@@ -1,10 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { rgbShift } from 'three/examples/jsm/tsl/display/RGBShiftNode.js'
-
-gsap.registerPlugin(ScrollTrigger)
 
 const memories = [
   {
@@ -74,7 +70,7 @@ const floatKeyframes = `
 `
 
 /* ─── Glowing timeline node ─── */
-const TimelineNode = () => (
+const TimelineNode = ({ active }) => (
   <div
     style={{
       position: 'absolute',
@@ -95,7 +91,9 @@ const TimelineNode = () => (
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        animation: 'glowPulse 3s ease-in-out infinite',
+        opacity: active ? 1 : 0,
+        animation: active ? 'glowPulse 3s ease-in-out infinite' : 'none',
+        transition: 'opacity 0.4s ease-out',
       }}
     />
     {/* Core dot */}
@@ -104,19 +102,21 @@ const TimelineNode = () => (
         width: '12px',
         height: '12px',
         borderRadius: '50%',
-        background: 'linear-gradient(135deg, #22C55E, #1FAF6D)',
-        boxShadow: '0 0 12px rgba(34,197,94,0.6), 0 0 24px rgba(34,197,94,0.25)',
-        border: '2px solid rgba(255,255,255,0.25)',
+        background: active ? 'linear-gradient(135deg, #22C55E, #1FAF6D)' : '#334155',
+        boxShadow: active ? '0 0 12px rgba(34,197,94,0.6), 0 0 24px rgba(34,197,94,0.25)' : 'none',
+        border: active ? '2px solid rgba(255,255,255,0.8)' : '2px solid rgba(255,255,255,0.25)',
+        transition: 'all 0.4s ease-out',
       }}
     />
   </div>
 )
 
 /* ─── Single memory row ─── */
-const MemoryRow = ({ memory, index }) => {
+const MemoryRow = ({ memory, index, active }) => {
   return (
     <div
       className="memory-row"
+      data-index={index}
       style={{
         display: 'grid',
         gridTemplateColumns: '1fr 60px 1fr',
@@ -128,6 +128,7 @@ const MemoryRow = ({ memory, index }) => {
     >
       {/* ── LEFT: Portrait Image ── */}
       <motion.div
+        className="memory-left"
         initial={{ opacity: 0, x: -80 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true, margin: '-80px' }}
@@ -139,6 +140,7 @@ const MemoryRow = ({ memory, index }) => {
         }}
       >
         <motion.div
+          className="memory-image-container"
           whileHover={{
             scale: 1.03,
             boxShadow:
@@ -222,12 +224,13 @@ const MemoryRow = ({ memory, index }) => {
       </motion.div>
 
       {/* ── CENTER: Timeline stem node ── */}
-      <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-        <TimelineNode />
+      <div className="memory-center" style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+        <TimelineNode active={active} />
       </div>
 
       {/* ── RIGHT: Text content card ── */}
       <motion.div
+        className="memory-right"
         initial={{ opacity: 0, x: 80 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true, margin: '-80px' }}
@@ -237,6 +240,7 @@ const MemoryRow = ({ memory, index }) => {
         }}
       >
         <motion.div
+          className="memory-card"
           whileHover={{
             scale: 1.03,
             boxShadow:
@@ -339,30 +343,63 @@ const MemoryRow = ({ memory, index }) => {
 function MemoryTimeline() {
   const sectionRef = useRef(null)
   const stemRef = useRef(null)
+  const [activeIndex, setActiveIndex] = useState(-1)
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Animate stem height
-      if (stemRef.current) {
-        gsap.fromTo(
-          stemRef.current,
-          { height: '0%' },
-          {
-            height: '100%',
-            ease: 'none',
-            scrollTrigger: {
-              trigger: sectionRef.current,
-              start: 'top 60%',
-              end: 'bottom 40%',
-              scrub: 1,
-            },
-          }
-        )
-      }
-    }, sectionRef)
+    let animationFrameId;
 
-    return () => ctx.revert()
-  }, [])
+    const handleScroll = () => {
+      if (!sectionRef.current || !stemRef.current) return;
+      
+      const rect = sectionRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      
+      // Calculate stem fill progress
+      // Start filling when the top of the section reaches 60% of viewport
+      const startOffset = viewportHeight * 0.6;
+      const scrolled = startOffset - rect.top;
+      
+      // Stop filling slightly before the bottom of the section
+      const totalDistance = rect.height * 0.85; 
+      
+      let progress = 0;
+      if (scrolled > 0) {
+        progress = Math.max(0, Math.min(1, scrolled / totalDistance));
+      }
+      
+      // Apply scaleY transformation
+      stemRef.current.style.transform = `scaleY(${progress})`;
+
+      // Activate nodes based on scroll position
+      let currentActiveIndex = -1;
+      const rows = sectionRef.current.querySelectorAll('.memory-row');
+      rows.forEach((row, index) => {
+        const rowRect = row.getBoundingClientRect();
+        // The node is exactly in the center of the row.
+        // Activate when the row's center crosses the 55% viewport mark
+        const rowCenter = rowRect.top + rowRect.height / 2;
+        if (rowCenter < viewportHeight * 0.55) {
+          currentActiveIndex = index;
+        }
+      });
+      
+      setActiveIndex(currentActiveIndex);
+    };
+
+    const onScroll = () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      animationFrameId = requestAnimationFrame(handleScroll);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    // Trigger initial calculation
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
 
   return (
     <section
@@ -470,31 +507,42 @@ function MemoryTimeline() {
                 top: 0,
                 left: 0,
                 width: '2px',
-                height: '0%',
+                height: '100%',
                 background:
                   'linear-gradient(180deg, rgba(34,197,94,0.8), rgba(31,175,109,0.6))',
                 boxShadow:
                   '0 0 8px rgba(34,197,94,0.4), 0 0 20px rgba(34,197,94,0.15)',
                 filter: 'blur(0.5px)',
+                transformOrigin: 'top',
+                transform: 'scaleY(0)',
+                transition: 'transform 0.3s ease-out',
               }}
             />
           </div>
 
           {/* ── Memory Rows ── */}
           {memories.map((memory, index) => (
-            <MemoryRow key={memory.id} memory={memory} index={index} />
+            <MemoryRow 
+              key={memory.id} 
+              memory={memory} 
+              index={index} 
+              active={index <= activeIndex} 
+            />
           ))}
         </div>
 
-        {/* ── Responsive mobile override ── */}
+        {/* ── Responsive media queries ── */}
         <style>{`
-        @media (max-width: 768px) {
+        /* Mobile: stacked layout */
+        @media (max-width: 767px) {
           .memories-container {
             min-height: auto !important;
             padding-bottom: 2rem !important;
           }
           .memory-row {
             margin-bottom: 3rem !important;
+            grid-template-columns: 1fr !important;
+            gap: 1.5rem !important;
           }
           .memory-row:last-child {
             margin-bottom: 0 !important;
@@ -502,19 +550,36 @@ function MemoryTimeline() {
           .timeline-stem-line {
             display: none !important;
           }
-          #memories > div:last-of-type > div:last-of-type > div {
-            grid-template-columns: 1fr !important;
-            gap: 1.5rem !important;
-          }
-          #memories > div:last-of-type > div:last-of-type > div > div:nth-child(1) {
+          .memory-left {
             justify-content: center !important;
             padding-right: 0 !important;
           }
-          #memories > div:last-of-type > div:last-of-type > div > div:nth-child(2) {
+          .memory-center {
             display: none !important;
           }
-          #memories > div:last-of-type > div:last-of-type > div > div:nth-child(3) {
+          .memory-right {
             padding-left: 0 !important;
+          }
+        }
+
+        /* Tablet: compressed desktop layout */
+        @media (min-width: 768px) and (max-width: 1024px) {
+          .memory-row {
+            grid-template-columns: 1fr 40px 1fr !important;
+            margin-bottom: 60px !important;
+          }
+          .memory-left {
+            padding-right: clamp(12px, 2.5vw, 24px) !important;
+          }
+          .memory-right {
+            padding-left: clamp(12px, 2.5vw, 24px) !important;
+          }
+          .memory-image-container {
+            width: min(240px, 45vw) !important;
+          }
+          .memory-card {
+            padding: clamp(1.2rem, 2.5vw, 1.8rem) !important;
+            max-width: 360px !important;
           }
         }
       `}</style>

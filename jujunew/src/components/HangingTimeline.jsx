@@ -69,6 +69,40 @@ const keyframes = `
   animation: captionFadeIn 0.8s ease-out forwards;
   animation-delay: 1.0s;
 }
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .hanging-timeline {
+    padding: 60px 0 !important;
+  }
+  .cards-wrapper {
+    gap: 100px !important;
+  }
+  .photo-wrapper {
+    width: 340px !important;
+  }
+  .emerald-clip {
+    width: 12px !important;
+    height: 12px !important;
+    top: -6px !important;
+    box-shadow: 0 0 10px #34d399, 0 0 18px rgba(16, 185, 129, 0.9), inset 0 0 5px #fff !important;
+  }
+  .hanging-vine {
+    background-image: url("data:image/svg+xml,%3Csvg width='30' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15,0 Q0,50 15,100 T15,200' fill='none' stroke='%2334d399' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+    filter: drop-shadow(0 0 8px #10b981) drop-shadow(0 0 16px #34d399) !important;
+  }
+  .hanging-timeline .photo-card {
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+  }
+  .hanging-timeline .photo-card:hover {
+    transform: scale(1.03) !important;
+    box-shadow: 0 25px 45px rgba(0,0,0,0.3) !important;
+  }
+  .hanging-timeline .caption {
+    font-size: 17px !important;
+    letter-spacing: 0.5px !important;
+  }
+}
 `
 
 const photos = [
@@ -244,7 +278,7 @@ export default function HangingTimeline() {
 
 
                 {/* Render each Polaroid photo hanging on the vine */}
-                <div style={{
+                <div className="cards-wrapper" style={{
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '5rem',
@@ -253,7 +287,7 @@ export default function HangingTimeline() {
                     position: 'relative',
                 }}>
                     {/* The Continuous Glowing Vine — starts from first image edge */}
-                    <div style={{
+                    <div className="hanging-vine" style={{
                         position: 'absolute',
                         left: '50%',
                         top: 0,
@@ -270,6 +304,7 @@ export default function HangingTimeline() {
                     {photos.map((ph, idx) => (
                         <motion.div
                             key={idx}
+                            className="photo-wrapper"
                             initial={{ opacity: 0, y: 40 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true, margin: '-50px' }}
@@ -286,7 +321,7 @@ export default function HangingTimeline() {
                             }}
                         >
                             {/* Emerald Clip */}
-                            <div style={{
+                            <div className="emerald-clip" style={{
                                 width: '14px',
                                 height: '14px',
                                 borderRadius: '50%',
@@ -357,7 +392,7 @@ export default function HangingTimeline() {
                     {showGapFiller && (
                         <motion.div
                             id="dynamic-gap-image"
-                            className="gap-image"
+                            className="gap-image photo-wrapper"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 20 }}
@@ -374,7 +409,7 @@ export default function HangingTimeline() {
                             }}
                         >
                             {/* Emerald Clip */}
-                            <div style={{
+                            <div className="emerald-clip" style={{
                                 width: '14px',
                                 height: '14px',
                                 borderRadius: '50%',

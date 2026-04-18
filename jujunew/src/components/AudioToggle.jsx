@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAudio } from '../contexts/AudioContext'
 
 /**
@@ -6,10 +6,26 @@ import { useAudio } from '../contexts/AudioContext'
  * Matches the Questionnaire card + Touch Me button aesthetic.
  * Uses the global AudioContext — zero audio logic here.
  * Visibility is controlled by the parent (App.jsx).
+ *
+ * ⛔ Completely removed on mobile (≤768px) — returns null,
+ *    so zero DOM footprint, zero layout impact.
  */
 function AudioToggle() {
   const { isMuted, toggleMute } = useAudio()
   const [showTooltip, setShowTooltip] = useState(false)
+
+  /* ── Mobile gate: completely unmount on small screens ── */
+  const [isSmallDevice, setIsSmallDevice] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsSmallDevice(window.innerWidth <= 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  // ⛔ Return null on mobile — component is fully removed from DOM
+  if (isSmallDevice) return null
 
   return (
     <>
@@ -170,37 +186,8 @@ function AudioToggle() {
           border-color: rgba(0, 0, 0, 0.4) transparent transparent transparent;
         }
 
-        /* ── Tablet responsive ── */
-        @media (max-width: 768px) {
-          .audio-toggle-wrap {
-            bottom: 80px;
-            right: 20px;
-          }
-          .audio-toggle-btn {
-            width: 44px;
-            height: 44px;
-          }
-          .audio-toggle-btn svg {
-            width: 18px;
-            height: 18px;
-          }
-        }
-
-        /* ── Small mobile responsive ── */
-        @media (max-width: 360px) {
-          .audio-toggle-wrap {
-            bottom: 64px;
-            right: 14px;
-          }
-          .audio-toggle-btn {
-            width: 40px;
-            height: 40px;
-          }
-          .audio-toggle-btn svg {
-            width: 16px;
-            height: 16px;
-          }
-        }
+        /* Mobile media queries removed — component returns null on ≤768px,
+           so these styles are unreachable. See isMobile gate above. */
       `}</style>
 
       <div className="audio-toggle-wrap">

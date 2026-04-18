@@ -11,6 +11,7 @@ import ParticlesBackground from './components/ParticlesBackground'
 import BackgroundGradient from './components/BackgroundGradient'
 import CustomCursor from './components/CustomCursor'
 import StarField from './components/StarField'
+import MobileAudioToggle from './components/MobileAudioToggle'
 
 const HangingTimeline = lazy(() => import('./components/HangingTimeline'))
 const MemoryTimeline = lazy(() => import('./components/MemoryTimeline'))
@@ -23,32 +24,41 @@ function App() {
   const [showIntro, setShowIntro] = useState(true)
   const [isPasswordUnlocked, setIsPasswordUnlocked] = useState(false)
   const [showAudio, setShowAudio] = useState(false)
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768)
+  const [isSmallDevice, setIsSmallDevice] = useState(false)
 
-  // ── Track mobile vs desktop (responsive) ──
   useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth <= 768
-      setIsMobile(mobile)
-      // Hide audio immediately on desktop
-      if (!mobile) setShowAudio(false)
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    const check = () => setIsSmallDevice(window.innerWidth <= 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
   }, [])
 
   /*
-   * AudioToggle visibility — MOBILE ONLY (≤768px)
+   * AudioToggle visibility — 3-observer approach:
    *
-   * Visible in: HangingTimeline, MemoryTimeline, SpecialMessage,
-   *             TouchMeCTA, Questionnaire
-   * Hidden in:  Intro, Hero, MinimalFooter, and on Desktop
+   * 1. ENTER observer  → watches #memories (threshold 0.3)
+   *    When MemoryTimeline enters viewport → showAudio = true
    *
-   * Uses IntersectionObserver + scroll backup for sections
-   * between observed elements.
+   * 2. ENTER observer  → watches #questionnaire (threshold 0.05)
+   *    When Questionnaire enters viewport → showAudio = true
+   *
+   * 3. EXIT observer   → watches .minimal-footer (threshold 0.2)
+   *    When footer enters viewport → showAudio = false
+   *
+   * Backup: rAF-throttled scroll listener covers the gap sections
+   * (SpecialMessage, TouchMeCTA) that sit between the two observed
+   * sections and have no IDs.
+   *
+   * On scroll-up past Hero → also hides the button.
    */
   useEffect(() => {
-    if (showIntro || !isPasswordUnlocked || !isMobile) {
+    if (showIntro || !isPasswordUnlocked) {
+      setShowAudio(false)
+      return
+    }
+
+    // ⛔ Skip observer setup on mobile — AudioToggle returns null on ≤1024px
+    if (window.innerWidth <= 1024) {
       setShowAudio(false)
       return
     }
@@ -59,13 +69,12 @@ function App() {
     let rescanTimer = null
 
     function setup() {
-      const hangingEl = document.querySelector('.hanging-timeline')
       const memoriesEl = document.getElementById('memories')
       const questionnaireEl = document.getElementById('questionnaire')
       const footerEl = document.querySelector('.minimal-footer')
 
-      // Need at least one section to begin
-      if (!memoriesEl && !hangingEl) return false
+      // Need at least memories to begin
+      if (!memoriesEl) return false
 
       // ── 1. ENTER observer: memories + questionnaire ──
       enterObserver = new IntersectionObserver(
@@ -82,8 +91,7 @@ function App() {
         { threshold: [0, 0.05, 0.3] }
       )
 
-      if (hangingEl) enterObserver.observe(hangingEl)
-      if (memoriesEl) enterObserver.observe(memoriesEl)
+      enterObserver.observe(memoriesEl)
       if (questionnaireEl) enterObserver.observe(questionnaireEl)
 
       // ── 2. EXIT observer: footer ──
@@ -120,17 +128,14 @@ function App() {
      * below the top of #memories AND above the top of .minimal-footer.
      */
     function evalScrollPosition(memoriesEl, questionnaireEl, footerEl) {
-      // Use hanging-timeline as alternate anchor if memories not available yet
-      const hangingEl = document.querySelector('.hanging-timeline')
-      const anchorEl = memoriesEl || hangingEl
-      const anchorRect = anchorEl?.getBoundingClientRect()
-      if (!anchorRect) return
+      const memoriesRect = memoriesEl?.getBoundingClientRect()
+      if (!memoriesRect) return
 
       const vh = window.innerHeight
       const viewportCenter = vh / 2
 
-      // Must have scrolled past the top of the first allowed section
-      const pastMemories = anchorRect.top < viewportCenter
+      // Must have scrolled past the top of memories
+      const pastMemories = memoriesRect.top < viewportCenter
 
       // Must not have reached the footer
       let beforeFooter = true
@@ -163,7 +168,7 @@ function App() {
       if (scrollCleanup) scrollCleanup()
       if (rescanTimer) clearInterval(rescanTimer)
     }
-  }, [showIntro, isPasswordUnlocked, isMobile])
+  }, [showIntro, isPasswordUnlocked])
 
   return (
     <AudioProvider>
@@ -192,6 +197,8 @@ function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8 }}
+            className="w-full max-w-full"
+            style={{ width: '100%', maxWidth: '100%', minWidth: '100%', margin: 0, padding: 0, overflowX: 'hidden' }}
           >
             <StarField />
             <NavigationDots />
@@ -229,7 +236,7 @@ function App() {
               }
             `}</style>
 
-            <div className="content-split">
+            <div className="content-split" style={{ width: '100%', maxWidth: '100%', margin: 0, padding: 0, overflowX: 'hidden' }}>
               <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>}>
                 <div className="column-left">
                   <HangingTimeline />
@@ -246,8 +253,11 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* Audio toggle — visible only in middle sections */}
-      {showAudio && <AudioToggle />}
+      {/* Audio toggle — visible only in middle sections and not on small devices */}
+      {showAudio && !isSmallDevice && <AudioToggle />}
+
+      {/* Mobile Audio toggle — always visible on small devices after intro */}
+      {isPasswordUnlocked && !showIntro && <MobileAudioToggle />}
 
       {/* Footer rendered OUTSIDE motion.div to escape its stacking context.
           This lets the footer's z-index compete at the root level, so it can

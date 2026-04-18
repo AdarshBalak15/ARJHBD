@@ -47,31 +47,30 @@ export default function Hero() {
         padding: '2rem',
       }}
     >
-      <motion.h1
-        initial={{ opacity: 0, y: 30, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{
-          duration: 1.2,
-          ease: [0.22, 1, 0.36, 1]
-        }}
-        className="text-gradient"
-        style={{
-          fontFamily: "'Poppins', sans-serif",
-          fontSize: 'clamp(3rem, 10vw, 5.5rem)',
-          fontWeight: 800,
-          marginBottom: '1rem',
-          letterSpacing: '-0.03em',
-          lineHeight: 1.1,
-        }}
-      >
-        Happy Birthday Arju
-      </motion.h1>
+      <div className="hero-title-container">
+        <motion.h1
+          initial={{ opacity: 0, y: 30, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{
+            duration: 1.2,
+            ease: [0.22, 1, 0.36, 1]
+          }}
+          className="text-gradient hero-title"
+          style={{
+            fontFamily: "'Poppins', sans-serif",
+            marginBottom: '1rem',
+          }}
+        >
+          <span className="hero-title-line">Happy Birthday</span>{' '}
+          <span className="hero-title-name">Arju</span>
+        </motion.h1>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, delay: 1.5 }}
-        className="subtext"
+        className="subtext hero-subtext"
         style={{
           fontFamily: "'Poppins', sans-serif",
           fontSize: 'clamp(1rem, 3.5vw, 1.6rem)',
