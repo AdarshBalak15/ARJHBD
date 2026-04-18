@@ -4,12 +4,13 @@ const nodemailer = require("nodemailer");
 /**
  * Netlify Function: login
  *
- * Production-ready login handler:
+ * Production-ready login handler with full IP geolocation:
  *   1. Validates password
- *   2. Fetches geolocation server-side from client IP
- *   3. Inserts EVERY attempt (success + failed) into Neon PostgreSQL
- *   4. Sends email alert ONLY on FAILED attempts
- *   5. Returns JSON response — never crashes
+ *   2. Extracts real client IP using Netlify-safe headers
+ *   3. Fetches geolocation via ipwho.is (no API key, no rate limits)
+ *   4. Inserts EVERY attempt (SUCCESS + FAILED) into Neon PostgreSQL
+ *   5. Sends email alert ONLY on FAILED attempts
+ *   6. Returns JSON response — never crashes
  *
  * Required Netlify env vars:
  *   DATABASE_URL          — Neon PostgreSQL connection string
@@ -25,7 +26,7 @@ const nodemailer = require("nodemailer");
 const CORRECT_PASSWORD = "Arju!0405";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Persistent connection pool (reused across warm invocations)
+// Persistent connection pool (reused across warm Netlify invocations)
 // ─────────────────────────────────────────────────────────────────────────────
 let pool = null;
 
@@ -44,15 +45,15 @@ function getPool() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Auto-create table if it doesn't exist
+// Auto-create login_logs table + index (once per cold start)
 // ─────────────────────────────────────────────────────────────────────────────
 let tableReady = false;
 
 async function ensureTable(db) {
-  if (tableReady) return; // Skip on warm invocations
+  if (tableReady) return;
   try {
     await db.query(`
-      CREATE TABLE IF NOT EXISTS login_attempts (
+      CREATE TABLE IF NOT EXISTS login_logs (
         id          SERIAL PRIMARY KEY,
         user_id     VARCHAR(255),
         ip_address  VARCHAR(50),
@@ -67,69 +68,153 @@ async function ensureTable(db) {
         created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Index on ip_address for faster queries
+    await db.query(`
+      CREATE INDEX IF NOT EXISTS idx_login_logs_ip
+        ON login_logs (ip_address);
+    `);
+
     tableReady = true;
-    console.log("[LOGIN] Table 'login_attempts' is ready");
+    console.log("[LOGIN] Table 'login_logs' + index ready");
   } catch (err) {
     console.error("[LOGIN] Table creation error (non-fatal):", err.message);
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Fetch geolocation from IP (server-side — never exposed to frontend)
+// 1️⃣  EXTRACT REAL USER IP (Netlify-safe priority chain)
+// ─────────────────────────────────────────────────────────────────────────────
+function resolveIP(headers) {
+  // x-nf-client-connection-ip = Netlify's own header (most reliable)
+  const nfIP = (headers["x-nf-client-connection-ip"] || "").trim();
+  if (nfIP) return nfIP;
+
+  // x-forwarded-for = standard proxy header (take first IP if comma-separated)
+  const xff = (headers["x-forwarded-for"] || "").split(",")[0].trim();
+  if (xff) return xff;
+
+  // client-ip = fallback
+  const clientIP = (headers["client-ip"] || "").trim();
+  if (clientIP) return clientIP;
+
+  // Ultimate fallback — Google DNS IP (ensures geo API doesn't break)
+  return "8.8.8.8";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Check if IP is local/private
+// ─────────────────────────────────────────────────────────────────────────────
+function isLocalIP(ip) {
+  return (
+    ip === "::1" ||
+    ip === "127.0.0.1" ||
+    ip.startsWith("::ffff:127.") ||
+    ip.startsWith("192.168.") ||
+    ip.startsWith("10.") ||
+    ip.startsWith("172.16.") ||
+    ip === "localhost"
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2️⃣  IP GEOLOCATION CACHE (avoid repeated API calls on warm invocations)
+// ─────────────────────────────────────────────────────────────────────────────
+const geoCache = new Map();
+const GEO_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const GEO_CACHE_MAX = 100;            // Max cached entries
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3️⃣  FETCH GEOLOCATION via ipwho.is (no API key, no rate limits)
 // ─────────────────────────────────────────────────────────────────────────────
 async function fetchGeo(ip) {
-  const defaults = {
+  const LOCAL_RESULT = {
+    city: "local",
+    region: "local",
+    country: "local",
+    latitude: null,
+    longitude: null,
+    timezone: "local",
+  };
+
+  const UNKNOWN_RESULT = {
     city: "unknown",
     region: "unknown",
-    country_name: "unknown",
+    country: "unknown",
     latitude: null,
     longitude: null,
     timezone: "unknown",
   };
 
-  try {
-    // For localhost/private IPs, let ipapi.co auto-detect
-    const isLocal =
-      ip === "::1" || ip === "127.0.0.1" || ip.startsWith("::ffff:127");
-    const lookupIP = isLocal ? "" : ip;
+  // ── Handle local/private IPs ───────────────────────────────────────────
+  if (isLocalIP(ip)) {
+    console.log("[GEO] Local IP detected — marking as 'local'");
+    return LOCAL_RESULT;
+  }
 
-    const res = await fetch(`https://ipapi.co/${lookupIP}/json/`, {
+  // ── Check cache first ──────────────────────────────────────────────────
+  const cached = geoCache.get(ip);
+  if (cached && Date.now() - cached.ts < GEO_CACHE_TTL) {
+    console.log("[GEO] Cache hit for", ip);
+    return cached.data;
+  }
+
+  // ── Fetch from ipwho.is ────────────────────────────────────────────────
+  try {
+    const res = await fetch(`https://ipwho.is/${ip}`, {
       signal: AbortSignal.timeout(4000),
       headers: { Accept: "application/json" },
     });
 
-    if (!res.ok) return defaults;
+    if (!res.ok) {
+      console.error("[GEO] API returned HTTP", res.status);
+      return UNKNOWN_RESULT;
+    }
+
     const data = await res.json();
 
-    // ipapi.co sometimes returns error JSON
-    if (data.error) return defaults;
+    // ipwho.is returns { success: false } on invalid IPs
+    if (data.success === false) {
+      console.error("[GEO] API returned success=false:", data.message);
+      return UNKNOWN_RESULT;
+    }
 
-    return {
-      city: data.city || "unknown",
-      region: data.region || "unknown",
-      country_name: data.country_name || "unknown",
-      latitude: data.latitude ?? null,
-      longitude: data.longitude ?? null,
-      timezone: data.timezone || "unknown",
+    const result = {
+      city:      data.city      || "unknown",
+      region:    data.region    || "unknown",
+      country:   data.country   || "unknown",
+      latitude:  data.latitude  || null,
+      longitude: data.longitude || null,
+      timezone:  (data.timezone && data.timezone.id) || "unknown",
     };
-  } catch (_) {
-    // Geo failure is non-fatal
-    return defaults;
+
+    // ── Store in cache (evict oldest if full) ────────────────────────────
+    if (geoCache.size >= GEO_CACHE_MAX) {
+      const oldestKey = geoCache.keys().next().value;
+      geoCache.delete(oldestKey);
+    }
+    geoCache.set(ip, { data: result, ts: Date.now() });
+
+    console.log(`[GEO] ✅ ${ip} → ${result.city}, ${result.region}, ${result.country}`);
+    return result;
+  } catch (err) {
+    // Geo failure is NEVER fatal — login continues
+    console.error("[GEO] ❌ Fetch failed (non-fatal):", err.message);
+    return UNKNOWN_RESULT;
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Send email alert (ONLY for failed login attempts)
+// 📩 SEND EMAIL ALERT (ONLY for FAILED login attempts)
 // ─────────────────────────────────────────────────────────────────────────────
-async function sendFailedLoginEmail({ ip, city, region, country, timezone, device_info, timestamp }) {
-  // Guard: only send if enabled
+async function sendFailedLoginEmail({ ip, city, region, country, latitude, longitude, timezone, device_info, timestamp }) {
   if (process.env.ALERT_EMAIL_ENABLED !== "true") {
-    console.log("[LOGIN] Email alerts disabled — skipping");
+    console.log("[EMAIL] Alerts disabled — skipping");
     return false;
   }
 
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.error("[LOGIN] SMTP credentials missing — skipping email");
+    console.error("[EMAIL] SMTP credentials missing — skipping");
     return false;
   }
 
@@ -148,6 +233,23 @@ async function sendFailedLoginEmail({ ip, city, region, country, timezone, devic
     const timeStr = new Date(timestamp).toLocaleString("en-IN", {
       timeZone: "Asia/Kolkata",
     });
+
+    // Google Maps link if coordinates available
+    const hasCoords = latitude != null && longitude != null;
+    const mapsLink = hasCoords
+      ? `https://www.google.com/maps?q=${latitude},${longitude}`
+      : null;
+
+    const mapsRow = mapsLink
+      ? `<tr>
+           <td style="padding:10px 16px;color:#6b7280;">📍 Map</td>
+           <td style="padding:10px 16px;">
+             <a href="${mapsLink}" target="_blank" style="color:#2563eb;text-decoration:underline;">
+               View on Google Maps ↗
+             </a>
+           </td>
+         </tr>`
+      : "";
 
     const html = `
       <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:540px;margin:0 auto;
@@ -185,6 +287,7 @@ async function sendFailedLoginEmail({ ip, city, region, country, timezone, devic
               <td style="padding:10px 16px;color:#6b7280;">⏰ Time (IST)</td>
               <td style="padding:10px 16px;color:#111827;font-weight:600;">${timeStr}</td>
             </tr>
+            ${mapsRow}
           </table>
         </div>
         <div style="padding:16px 24px;background:#fef2f2;border-top:1px solid #fecaca;">
@@ -208,16 +311,16 @@ async function sendFailedLoginEmail({ ip, city, region, country, timezone, devic
       html,
     });
 
-    console.log("[LOGIN] ✅ Alert email sent to", process.env.ALERT_EMAIL_TO);
+    console.log("[EMAIL] ✅ Alert sent to", process.env.ALERT_EMAIL_TO);
     return true;
   } catch (err) {
-    console.error("[LOGIN] ❌ Email send failed:", err.message);
+    console.error("[EMAIL] ❌ Send failed:", err.message);
     return false;
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NETLIFY FUNCTION HANDLER
+// 🚀 NETLIFY FUNCTION HANDLER
 // ─────────────────────────────────────────────────────────────────────────────
 exports.handler = async (event) => {
   // Only allow POST
@@ -236,22 +339,26 @@ exports.handler = async (event) => {
     const isValid = password === CORRECT_PASSWORD;
     const status = isValid ? "SUCCESS" : "FAILED";
 
-    // ── Resolve client IP ──────────────────────────────────────────────────
-    const ip =
-      (event.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
-      event.headers["client-ip"] ||
-      "unknown";
-
+    // ── 1️⃣ Extract real client IP (Netlify-safe) ─────────────────────────
+    const ip = resolveIP(event.headers);
     const device_info = event.headers["user-agent"] || "unknown";
     const timestamp = new Date().toISOString();
 
     console.log(`[LOGIN] Attempt: status=${status} | ip=${ip}`);
 
-    // ── Fetch geolocation (server-side) ────────────────────────────────────
+    // ── 2️⃣ Fetch geolocation (server-side, non-blocking on failure) ─────
     const geo = await fetchGeo(ip);
-    console.log(`[LOGIN] Geo: ${geo.city}, ${geo.region}, ${geo.country_name}`);
+    console.log(`[LOGIN] Geo: ${geo.city}, ${geo.region}, ${geo.country} | tz=${geo.timezone}`);
 
-    // ── Insert into PostgreSQL ─────────────────────────────────────────────
+    // ── 3️⃣ Safe data extraction (never undefined) ───────────────────────
+    const city      = geo.city      || "unknown";
+    const region    = geo.region    || "unknown";
+    const country   = geo.country   || "unknown";
+    const latitude  = geo.latitude  != null ? Number(geo.latitude)  : null;
+    const longitude = geo.longitude != null ? Number(geo.longitude) : null;
+    const timezone  = geo.timezone  || "unknown";
+
+    // ── 4️⃣ Insert into PostgreSQL (login_logs table) ────────────────────
     let dbSuccess = false;
 
     try {
@@ -260,52 +367,53 @@ exports.handler = async (event) => {
       if (!db) {
         console.error("[LOGIN] ❌ DATABASE_URL not set — skipping DB insert");
       } else {
-        // Test connection + ensure table exists
         await ensureTable(db);
         console.log("[LOGIN] DB Connected");
 
         await db.query(
-          `INSERT INTO login_attempts
-            (user_id, ip_address, city, region, country, latitude, longitude, timezone, device_info, status)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          `INSERT INTO login_logs
+            (user_id, ip_address, city, region, country, latitude, longitude, timezone, device_info, status, created_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())`,
           [
             "arju",
             ip,
-            geo.city || "unknown",
-            geo.region || "unknown",
-            geo.country_name || "unknown",
-            geo.latitude != null ? Number(geo.latitude) : null,
-            geo.longitude != null ? Number(geo.longitude) : null,
-            geo.timezone || "unknown",
+            city,
+            region,
+            country,
+            latitude,
+            longitude,
+            timezone,
             device_info,
             status,
           ]
         );
 
         dbSuccess = true;
-        console.log("[LOGIN] ✅ Insert Success — status:", status);
+        console.log("[LOGIN] ✅ Insert Success — status:", status, "| ip:", ip);
       }
     } catch (dbErr) {
-      // DB failure is non-fatal — login still works
+      // DB failure is non-fatal — login response still works
       console.error("[LOGIN] ❌ DB Error:", dbErr.message);
     }
 
-    // ── Send email alert ONLY for FAILED attempts ──────────────────────────
+    // ── 5️⃣ Send email alert ONLY for FAILED attempts ────────────────────
     let emailSent = false;
 
     if (status === "FAILED") {
       emailSent = await sendFailedLoginEmail({
         ip,
-        city: geo.city || "unknown",
-        region: geo.region || "unknown",
-        country: geo.country_name || "unknown",
-        timezone: geo.timezone || "unknown",
+        city,
+        region,
+        country,
+        latitude,
+        longitude,
+        timezone,
         device_info,
         timestamp,
       });
     }
 
-    // ── Return response ────────────────────────────────────────────────────
+    // ── Return response (login is never delayed) ─────────────────────────
     return {
       statusCode: isValid ? 200 : 401,
       headers: { "Content-Type": "application/json" },
