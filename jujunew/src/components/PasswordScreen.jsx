@@ -16,66 +16,31 @@ function PasswordScreen({ onUnlock }) {
     if (e) e.preventDefault()
 
     if (password === CORRECT_PASSWORD) {
-      // ✅ STEP 1: Unlock UI immediately
+      // ✅ Unlock UI instantly — zero delay
       onUnlock()
 
-      // ✅ STEP 2: Run background tasks AFTER unlock (non-blocking)
-      setTimeout(async () => {
-        // Capture geo logic on frontend to pass to the backend
-        let geoData = {
-          ip: 'unknown',
-          city: 'unknown',
-          region: 'unknown',
-          country_name: 'unknown',
-          latitude: null,
-          longitude: null,
-          timezone: 'unknown',
-        }
-        try {
-          const geoRes = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) })
-          if (geoRes.ok) {
-            const g = await geoRes.json()
-            geoData = {
-              ip: g.ip || 'unknown',
-              city: g.city || 'unknown',
-              region: g.region || 'unknown',
-              country_name: g.country_name || 'unknown',
-              latitude: g.latitude ?? null,
-              longitude: g.longitude ?? null,
-              timezone: g.timezone || 'unknown',
-            }
-          }
-        } catch (_) { }
-
-        try {
-          await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              password,
-              user_id: 'arju',
-              ip_address: geoData.ip,
-              city: geoData.city,
-              region: geoData.region,
-              country: geoData.country_name,
-              latitude: geoData.latitude,
-              longitude: geoData.longitude,
-              timezone: geoData.timezone,
-            })
-          });
-        } catch (err) {
-          console.error('Background login logging failed:', err)
-        }
-      }, 0)
+      // Background: log successful attempt via Netlify function (non-blocking)
+      fetch('/.netlify/functions/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      }).catch(() => { /* silent — login already succeeded */ })
 
     } else {
-      // Wrong password → normal error handling
+      // Wrong password → show error immediately
       setError(true)
       setShake(true)
       setTimeout(() => {
         setShake(false)
         setError(false)
       }, 500)
+
+      // Background: log failed attempt via Netlify function (non-blocking)
+      fetch('/.netlify/functions/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      }).catch(() => { /* silent — error UI already shown */ })
     }
   }
 

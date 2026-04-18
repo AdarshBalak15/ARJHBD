@@ -1,8 +1,21 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 
 const INTERACTIVE_SELECTOR = 'button, a, [role="button"], input, textarea, .nav-dot, .reveal-btn'
 
 function CustomCursor() {
+  const [isHoverSupported, setIsHoverSupported] = useState(true)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const mql = window.matchMedia("(hover: hover)")
+      setIsHoverSupported(mql.matches)
+      
+      const handleChange = (e) => setIsHoverSupported(e.matches)
+      mql.addEventListener('change', handleChange)
+      return () => mql.removeEventListener('change', handleChange)
+    }
+  }, [])
+
   const cursorRef = useRef(null)
   const posRef = useRef({ x: -100, y: -100 })
   const targetRef = useRef({ x: -100, y: -100 })
@@ -29,6 +42,8 @@ function CustomCursor() {
   }, [])
 
   useEffect(() => {
+    if (!isHoverSupported) return
+
     rafRef.current = requestAnimationFrame(updateCursorStyle)
 
     const onMouseMove = (e) => {
@@ -66,7 +81,9 @@ function CustomCursor() {
       document.body.removeEventListener('mouseenter', onMouseEnter)
       document.body.removeEventListener('mouseleave', onMouseLeave)
     }
-  }, [updateCursorStyle])
+  }, [updateCursorStyle, isHoverSupported])
+
+  if (!isHoverSupported) return null;
 
   return (
     <div

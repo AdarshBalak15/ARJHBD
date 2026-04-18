@@ -45,6 +45,16 @@ body {
   position: relative;
 }
 
+/* ── Fallback cursor visibility on mobile ── */
+@media (hover: none) and (pointer: coarse) {
+  html, body { cursor: auto !important; }
+  .custom-cursor-dot { display: none !important; }
+}
+@media (max-width: 768px) {
+  html, body { cursor: auto !important; }
+  .custom-cursor-dot { display: none !important; }
+}
+
 /* ── Scroll lock when modal is open (no pointer blocking!) ── */
 body.modal-open {
   overflow: hidden;
@@ -414,4 +424,76 @@ a, button, [role="button"], input, textarea, select, label {
   width: 100%;
   border-radius: 2px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CountdownTimer — Mobile 2×2 Grid Layout
+   Glassmorphism square boxes, matching hero aesthetic.
+   Desktop layout is untouched.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .countdown-container {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    padding: 0 16px;
+    justify-items: center;
+    align-items: center;
+  }
+
+  .countdown-box {
+    width: 100% !important;
+    aspect-ratio: 1 / 1; /* perfect square */
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    border-radius: 18px !important;
+
+    /* Glassmorphism — matches hero glass style */
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+
+    /* Soft glow */
+    box-shadow:
+      0 8px 25px rgba(0, 0, 0, 0.25),
+      inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+
+    transition: transform 0.2s ease;
+  }
+
+  .countdown-box:active {
+    transform: scale(0.97);
+  }
+
+  /* Number styling */
+  .countdown-box h1,
+  .countdown-box .number,
+  .countdown-box > div:first-child {
+    font-size: 28px !important;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  /* Label styling */
+  .countdown-box span,
+  .countdown-box .label,
+  .countdown-box > div:last-child {
+    font-size: 11px !important;
+    letter-spacing: 2px;
+    opacity: 0.8;
+    margin-top: 6px;
+  }
+}
+
+/* Desktop safety — preserve existing flex layout */
+@media (min-width: 769px) {
+  .countdown-container {
+    display: flex; /* keep existing layout */
+  }
 }

@@ -49,12 +49,18 @@ export default defineConfig({
     // Asset inlining threshold (4KB)
     assetsInlineLimit: 4096,
   },
-  // Proxy /api/* to Express backend during dev
+  // Proxy during local dev
   server: {
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
+      },
+      // Proxy Netlify function calls to Express during local dev
+      '/.netlify/functions/login': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        rewrite: (path) => '/api/auth/login',
       },
     },
   },

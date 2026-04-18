@@ -322,6 +322,7 @@ function CountdownTimer() {
           /* ─── COUNTDOWN ────────────────────────────────────── */
           <motion.div
             key="countdown"
+            className="countdown-container"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -337,6 +338,7 @@ function CountdownTimer() {
             {timeUnits.map((unit, index) => (
               <motion.div
                 key={unit.label}
+                className="countdown-box"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 2.5 + index * 0.1 }}

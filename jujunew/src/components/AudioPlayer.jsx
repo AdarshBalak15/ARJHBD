@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
+import { useAudio } from '../contexts/AudioContext'
 
 function AudioPlayer({ isUnlocked }) {
-  const audioRef = useRef(null)
+  const { audioRef, isMuted } = useAudio()
   const fadeIntervalRef = useRef(null)
 
   const [isPlaying, setIsPlaying] = useState(false)
@@ -13,6 +14,7 @@ function AudioPlayer({ isUnlocked }) {
       const audio = new Audio("/maula-mere-maula.mp3")
       audio.loop = true
       audio.volume = 0 // Starts at 0, ready for fade-in
+      audio.muted = isMuted // Sync initial mute state
       audioRef.current = audio
       // Expose globally so other components (e.g. portrait video) can pause/resume
       window.__bgAudio = audio
@@ -23,12 +25,13 @@ function AudioPlayer({ isUnlocked }) {
       if (audioRef.current) {
         audioRef.current.pause()
         audioRef.current = null
+        window.__bgAudio = null
       }
       if (fadeIntervalRef.current) {
         clearInterval(fadeIntervalRef.current)
       }
     }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle the play logic directly when the app is unlocked
   useEffect(() => {
@@ -64,7 +67,14 @@ function AudioPlayer({ isUnlocked }) {
           // Autoplay blocked until user interaction — expected behavior
         })
     }
-  }, [isUnlocked, isPlaying])
+  }, [isUnlocked, isPlaying]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync mute state from context to audio element
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = isMuted
+    }
+  }, [isMuted]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return null
 }
