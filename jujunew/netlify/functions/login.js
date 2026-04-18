@@ -83,30 +83,23 @@ async function ensureTable(db) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1️⃣  EXTRACT REAL USER IP (Netlify-safe priority chain)
+// 1️⃣  EXTRACT REAL CLIENT IP (Netlify-safe priority chain)
+//     Local/private IPs are replaced with 8.8.8.8 so geo API still works
 // ─────────────────────────────────────────────────────────────────────────────
 function resolveIP(headers) {
-  // x-nf-client-connection-ip = Netlify's own header (most reliable)
-  const nfIP = (headers["x-nf-client-connection-ip"] || "").trim();
-  if (nfIP) return nfIP;
+  let ip =
+    headers["x-nf-client-connection-ip"] ||
+    headers["x-forwarded-for"] ||
+    headers["client-ip"] ||
+    "8.8.8.8";
 
-  // x-forwarded-for = standard proxy header (take first IP if comma-separated)
-  const xff = (headers["x-forwarded-for"] || "").split(",")[0].trim();
-  if (xff) return xff;
+  // x-forwarded-for may contain multiple IPs — take the first (real client)
+  if (ip.includes(",")) {
+    ip = ip.split(",")[0].trim();
+  }
 
-  // client-ip = fallback
-  const clientIP = (headers["client-ip"] || "").trim();
-  if (clientIP) return clientIP;
-
-  // Ultimate fallback — Google DNS IP (ensures geo API doesn't break)
-  return "8.8.8.8";
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Check if IP is local/private
-// ─────────────────────────────────────────────────────────────────────────────
-function isLocalIP(ip) {
-  return (
+  // Replace localhost / private IPs with fallback so geo API doesn't break
+  if (
     ip === "::1" ||
     ip === "127.0.0.1" ||
     ip.startsWith("::ffff:127.") ||
@@ -114,7 +107,12 @@ function isLocalIP(ip) {
     ip.startsWith("10.") ||
     ip.startsWith("172.16.") ||
     ip === "localhost"
-  );
+  ) {
+    console.log("[IP] Local/private IP detected — using 8.8.8.8 fallback");
+    ip = "8.8.8.8";
+  }
+
+  return ip.trim();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -125,33 +123,11 @@ const GEO_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const GEO_CACHE_MAX = 100;            // Max cached entries
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3️⃣  FETCH GEOLOCATION via ipwho.is (no API key, no rate limits)
+// 3️⃣  FETCH GEOLOCATION — PRIMARY: ipwho.is → FALLBACK: ipapi.co
+//     Both APIs are free, no API key required
+//     If BOTH fail → returns "unknown" for all fields (never crashes)
 // ─────────────────────────────────────────────────────────────────────────────
 async function fetchGeo(ip) {
-  const LOCAL_RESULT = {
-    city: "local",
-    region: "local",
-    country: "local",
-    latitude: null,
-    longitude: null,
-    timezone: "local",
-  };
-
-  const UNKNOWN_RESULT = {
-    city: "unknown",
-    region: "unknown",
-    country: "unknown",
-    latitude: null,
-    longitude: null,
-    timezone: "unknown",
-  };
-
-  // ── Handle local/private IPs ───────────────────────────────────────────
-  if (isLocalIP(ip)) {
-    console.log("[GEO] Local IP detected — marking as 'local'");
-    return LOCAL_RESULT;
-  }
-
   // ── Check cache first ──────────────────────────────────────────────────
   const cached = geoCache.get(ip);
   if (cached && Date.now() - cached.ts < GEO_CACHE_TTL) {
@@ -159,49 +135,88 @@ async function fetchGeo(ip) {
     return cached.data;
   }
 
-  // ── Fetch from ipwho.is ────────────────────────────────────────────────
+  // ── 4️⃣ Fail-safe dual-API fetch ───────────────────────────────────────
+  let geoData = null;
+
+  // PRIMARY API: ipwho.is
   try {
+    console.log("[GEO] Trying primary API: ipwho.is/" + ip);
     const res = await fetch(`https://ipwho.is/${ip}`, {
       signal: AbortSignal.timeout(4000),
       headers: { Accept: "application/json" },
     });
-
-    if (!res.ok) {
-      console.error("[GEO] API returned HTTP", res.status);
-      return UNKNOWN_RESULT;
-    }
-
     const data = await res.json();
 
-    // ipwho.is returns { success: false } on invalid IPs
     if (data.success === false) {
-      console.error("[GEO] API returned success=false:", data.message);
-      return UNKNOWN_RESULT;
+      throw new Error("Primary API returned success=false: " + (data.message || "unknown"));
     }
 
-    const result = {
-      city:      data.city      || "unknown",
-      region:    data.region    || "unknown",
-      country:   data.country   || "unknown",
-      latitude:  data.latitude  || null,
-      longitude: data.longitude || null,
-      timezone:  (data.timezone && data.timezone.id) || "unknown",
-    };
+    geoData = data;
+    console.log("[GEO] ✅ Primary API (ipwho.is) succeeded");
+  } catch (primaryErr) {
+    console.error("[GEO] ⚠️ Primary API failed:", primaryErr.message);
 
-    // ── Store in cache (evict oldest if full) ────────────────────────────
+    // FALLBACK API: ipapi.co
+    try {
+      console.log("[GEO] Trying fallback API: ipapi.co/" + ip + "/json/");
+      const backup = await fetch(`https://ipapi.co/${ip}/json/`, {
+        signal: AbortSignal.timeout(4000),
+        headers: { Accept: "application/json" },
+      });
+      geoData = await backup.json();
+
+      // ipapi.co returns { error: true } on failure
+      if (geoData.error) {
+        console.error("[GEO] ⚠️ Fallback API returned error:", geoData.reason);
+        geoData = null;
+      } else {
+        console.log("[GEO] ✅ Fallback API (ipapi.co) succeeded");
+      }
+    } catch (fallbackErr) {
+      console.error("[GEO] ❌ Fallback API also failed:", fallbackErr.message);
+      geoData = null;
+    }
+  }
+
+  // ── 5️⃣ Safe field extraction (NEVER undefined) ────────────────────────
+  let city = "unknown";
+  let region = "unknown";
+  let country = "unknown";
+  let latitude = null;
+  let longitude = null;
+  let timezone = "unknown";
+
+  if (geoData) {
+    // Handle both ipwho.is and ipapi.co response formats
+    city      = geoData.city      || geoData.town         || "unknown";
+    region    = geoData.region    || geoData.region_name   || "unknown";
+    country   = geoData.country   || geoData.country_name  || "unknown";
+    latitude  = geoData.latitude  || geoData.lat           || null;
+    longitude = geoData.longitude || geoData.lon           || null;
+    // ipwho.is nests timezone: { id: "Asia/Kolkata" }
+    // ipapi.co returns timezone as flat string: "Asia/Kolkata"
+    timezone  = (geoData.timezone && typeof geoData.timezone === "object")
+      ? (geoData.timezone.id || "unknown")
+      : (geoData.timezone || "unknown");
+  }
+
+  const result = { city, region, country, latitude, longitude, timezone };
+
+  // ── 6️⃣ Debug logging ──────────────────────────────────────────────────
+  console.log("[GEO] IP:", ip);
+  console.log("[GEO] GeoData:", geoData ? "received" : "null (both APIs failed)");
+  console.log("[GEO] Final Extracted:", JSON.stringify(result));
+
+  // ── Store in cache (evict oldest if full) ──────────────────────────────
+  if (geoData) {
     if (geoCache.size >= GEO_CACHE_MAX) {
       const oldestKey = geoCache.keys().next().value;
       geoCache.delete(oldestKey);
     }
     geoCache.set(ip, { data: result, ts: Date.now() });
-
-    console.log(`[GEO] ✅ ${ip} → ${result.city}, ${result.region}, ${result.country}`);
-    return result;
-  } catch (err) {
-    // Geo failure is NEVER fatal — login continues
-    console.error("[GEO] ❌ Fetch failed (non-fatal):", err.message);
-    return UNKNOWN_RESULT;
   }
+
+  return result;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
