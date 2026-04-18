@@ -23,27 +23,32 @@ function App() {
   const [showIntro, setShowIntro] = useState(true)
   const [isPasswordUnlocked, setIsPasswordUnlocked] = useState(false)
   const [showAudio, setShowAudio] = useState(false)
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768)
+
+  // ── Track mobile vs desktop (responsive) ──
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768
+      setIsMobile(mobile)
+      // Hide audio immediately on desktop
+      if (!mobile) setShowAudio(false)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   /*
-   * AudioToggle visibility — 3-observer approach:
+   * AudioToggle visibility — MOBILE ONLY (≤768px)
    *
-   * 1. ENTER observer  → watches #memories (threshold 0.3)
-   *    When MemoryTimeline enters viewport → showAudio = true
+   * Visible in: HangingTimeline, MemoryTimeline, SpecialMessage,
+   *             TouchMeCTA, Questionnaire
+   * Hidden in:  Intro, Hero, MinimalFooter, and on Desktop
    *
-   * 2. ENTER observer  → watches #questionnaire (threshold 0.05)
-   *    When Questionnaire enters viewport → showAudio = true
-   *
-   * 3. EXIT observer   → watches .minimal-footer (threshold 0.2)
-   *    When footer enters viewport → showAudio = false
-   *
-   * Backup: rAF-throttled scroll listener covers the gap sections
-   * (SpecialMessage, TouchMeCTA) that sit between the two observed
-   * sections and have no IDs.
-   *
-   * On scroll-up past Hero → also hides the button.
+   * Uses IntersectionObserver + scroll backup for sections
+   * between observed elements.
    */
   useEffect(() => {
-    if (showIntro || !isPasswordUnlocked) {
+    if (showIntro || !isPasswordUnlocked || !isMobile) {
       setShowAudio(false)
       return
     }
@@ -54,12 +59,13 @@ function App() {
     let rescanTimer = null
 
     function setup() {
+      const hangingEl = document.querySelector('.hanging-timeline')
       const memoriesEl = document.getElementById('memories')
       const questionnaireEl = document.getElementById('questionnaire')
       const footerEl = document.querySelector('.minimal-footer')
 
-      // Need at least memories to begin
-      if (!memoriesEl) return false
+      // Need at least one section to begin
+      if (!memoriesEl && !hangingEl) return false
 
       // ── 1. ENTER observer: memories + questionnaire ──
       enterObserver = new IntersectionObserver(
@@ -76,7 +82,8 @@ function App() {
         { threshold: [0, 0.05, 0.3] }
       )
 
-      enterObserver.observe(memoriesEl)
+      if (hangingEl) enterObserver.observe(hangingEl)
+      if (memoriesEl) enterObserver.observe(memoriesEl)
       if (questionnaireEl) enterObserver.observe(questionnaireEl)
 
       // ── 2. EXIT observer: footer ──
@@ -113,14 +120,17 @@ function App() {
      * below the top of #memories AND above the top of .minimal-footer.
      */
     function evalScrollPosition(memoriesEl, questionnaireEl, footerEl) {
-      const memoriesRect = memoriesEl?.getBoundingClientRect()
-      if (!memoriesRect) return
+      // Use hanging-timeline as alternate anchor if memories not available yet
+      const hangingEl = document.querySelector('.hanging-timeline')
+      const anchorEl = memoriesEl || hangingEl
+      const anchorRect = anchorEl?.getBoundingClientRect()
+      if (!anchorRect) return
 
       const vh = window.innerHeight
       const viewportCenter = vh / 2
 
-      // Must have scrolled past the top of memories
-      const pastMemories = memoriesRect.top < viewportCenter
+      // Must have scrolled past the top of the first allowed section
+      const pastMemories = anchorRect.top < viewportCenter
 
       // Must not have reached the footer
       let beforeFooter = true
@@ -153,7 +163,7 @@ function App() {
       if (scrollCleanup) scrollCleanup()
       if (rescanTimer) clearInterval(rescanTimer)
     }
-  }, [showIntro, isPasswordUnlocked])
+  }, [showIntro, isPasswordUnlocked, isMobile])
 
   return (
     <AudioProvider>
