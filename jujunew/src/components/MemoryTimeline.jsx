@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { rgbShift } from 'three/examples/jsm/tsl/display/RGBShiftNode.js'
 
 const memories = [
   {

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Float, MeshDistortMaterial } from '@react-three/drei'
-import * as THREE from 'three'
+import { Shape, ExtrudeGeometry } from 'three'
 import Typed from 'typed.js'
 
 /* ─── CSS Keyframes ─── */
@@ -174,7 +174,7 @@ canvas {
 
 /* ─── 3D Heart Shape Geometry ─── */
 function createHeartShape() {
-  const shape = new THREE.Shape()
+  const shape = new Shape()
   const x = 0, y = 0
   shape.moveTo(x, y + 0.5)
   shape.bezierCurveTo(x, y + 0.5, x - 0.1, y + 1.1, x - 0.65, y + 1.1)
@@ -194,7 +194,7 @@ function GlowingHeart({ heartAnimPhase }) {
   const heartShape = useMemo(() => createHeartShape(), [])
 
   const geometry = useMemo(() => {
-    const geo = new THREE.ExtrudeGeometry(heartShape, {
+    const geo = new ExtrudeGeometry(heartShape, {
       depth: 0.45,
       bevelEnabled: true,
       bevelSegments: 12,
@@ -601,6 +601,8 @@ function SpecialMessage() {
   const [heartAnimPhase, setHeartAnimPhase] = useState('idle')
   const [showEmojis, setShowEmojis] = useState(false)
   const cinematicVideoRef = useRef(null)
+  // Increment on every reveal to force complete remount of cinematic tree
+  const [animationKey, setAnimationKey] = useState(0)
 
   /* ─── Mobile Antigravity Video Reveal ─── */
   const videoAntigravityRef = useRef(null)
@@ -640,6 +642,15 @@ function SpecialMessage() {
 
   const handleReveal = () => {
     if (phase !== 'idle') return
+    // Reset ALL animation state to clean initial values before starting
+    setHeartAnimPhase('idle')
+    setShowEmojis(false)
+    setShowTyped(false)
+    setShowLetter(false)
+    // Increment key to force full remount of cinematic components
+    // (destroys stale Three.js refs, Typed.js instances, CSS animations)
+    setAnimationKey(k => k + 1)
+    // Start the cinematic phase
     setPhase('cinematic')
   }
 
@@ -761,6 +772,8 @@ function SpecialMessage() {
     setPhase('idle')
     setShowTyped(false)
     setShowLetter(false)
+    setHeartAnimPhase('idle')
+    setShowEmojis(false)
     document.body.style.overflow = 'auto'
   }
 
@@ -1151,12 +1164,11 @@ function SpecialMessage() {
           <AnimatePresence>
             {phase !== 'idle' && (
               <motion.div
-                key="cinematic-modal-overlay"
+                key={`cinematic-modal-overlay-${animationKey}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 1.2, ease: 'easeInOut' }}
-                onClick={handleClose}
                 style={{
                   position: 'fixed',
                   top: 0,
@@ -1169,9 +1181,11 @@ function SpecialMessage() {
                   justifyContent: 'center',
                   background: 'rgba(10, 10, 30, 0.95)',
                   cursor: 'default',
-                  overflowY: 'auto',
+                  overflowY: phase === 'letter' ? 'auto' : 'hidden',
                   overflowX: 'hidden',
                   padding: 'clamp(2rem, 5vh, 4rem) 0',
+                  /* Block ALL clicks during cinematic animation phase */
+                  pointerEvents: phase === 'cinematic' ? 'none' : 'auto',
                 }}
               >
                 {/* Dark overlay with blur */}
@@ -1225,7 +1239,7 @@ function SpecialMessage() {
                 <AnimatePresence>
                   {phase === 'cinematic' && (
                     <motion.div
-                      key="cinematic-content"
+                      key={`cinematic-content-${animationKey}`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0, scale: 0.85, y: -40 }}
@@ -1289,11 +1303,12 @@ function SpecialMessage() {
                 <AnimatePresence>
                   {phase === 'letter' && (
                     <motion.div
-                      key="letter-content"
+                      key={`letter-content-${animationKey}`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 1 }}
-                      style={{ position: 'relative', zIndex: 10, width: '100%', display: 'flex', justifyContent: 'center', margin: 'auto 0' }}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ position: 'relative', zIndex: 10, width: '100%', display: 'flex', justifyContent: 'center', margin: 'auto 0', pointerEvents: 'auto' }}
                     >
                       <LetterCard show={showLetter} onClose={handleClose} />
                     </motion.div>

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { motion } from 'framer-motion'
-import MinimalFooter from './MinimalFooter'
+
+const MinimalFooter = lazy(() => import('./MinimalFooter'))
 
 const CORRECT_PASSWORD = "Arju!0405"
 
@@ -267,7 +268,9 @@ function PasswordScreen({ onUnlock }) {
           pointerEvents: 'auto',
         }}
       >
-        <MinimalFooter />
+        <Suspense fallback={null}>
+          <MinimalFooter />
+        </Suspense>
       </div>
     </motion.div>
   )

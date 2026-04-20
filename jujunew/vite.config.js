@@ -27,16 +27,32 @@ export default defineConfig({
         drop_console: true,     // Remove all console.* calls
         drop_debugger: true,    // Remove debugger statements
         pure_funcs: ['console.log', 'console.warn', 'console.info'],
+        passes: 2,              // Run compression twice for better results
+      },
+      mangle: {
+        safari10: true,         // Work around Safari 10 bugs
       },
     },
     // Code splitting configuration
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Separate vendor chunks for better caching
-          'react-vendor': ['react', 'react-dom'],
-          'three-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
-          'animation-vendor': ['framer-motion', 'gsap'],
+        manualChunks(id) {
+          // Three.js ecosystem — largest dependency, isolate for caching
+          if (id.includes('three') || id.includes('@react-three')) {
+            return 'three-vendor'
+          }
+          // Animation libraries
+          if (id.includes('framer-motion') || id.includes('gsap')) {
+            return 'animation-vendor'
+          }
+          // Particles engine
+          if (id.includes('tsparticles') || id.includes('@tsparticles')) {
+            return 'particles-vendor'
+          }
+          // React core — shared across all chunks
+          if (id.includes('react-dom') || id.includes('/react/')) {
+            return 'react-vendor'
+          }
         },
       },
     },
@@ -48,6 +64,8 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
     // Asset inlining threshold (4KB)
     assetsInlineLimit: 4096,
+    // Target modern browsers for smaller output
+    target: 'es2020',
   },
   // Proxy during local dev
   server: {
