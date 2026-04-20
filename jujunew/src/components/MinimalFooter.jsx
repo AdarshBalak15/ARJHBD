@@ -491,13 +491,19 @@ export default function MinimalFooter() {
             color: #c4b5fd !important;
           }
 
-          /* ── Tablet: hide pipe separator ── */
+          /* ── Tablet / Mobile ≤768px: stack contact items vertically ── */
           @media (max-width: 768px) {
             .footer-separator {
               display: none !important;
             }
             .minimal-footer {
               margin-top: 0 !important;
+            }
+            .minimal-footer__contact {
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: center !important;
+              gap: 2px !important;
             }
           }
 

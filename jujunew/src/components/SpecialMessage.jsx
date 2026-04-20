@@ -687,6 +687,9 @@ function SpecialMessage() {
     // Hide custom cursor during video playback
     document.body.classList.add('video-playing')
 
+    // Notify audio toggles to hide (consumed by useFullscreenState hook)
+    document.dispatchEvent(new CustomEvent('cinematicVideoChange', { detail: { active: true } }))
+
     // Show overlay with fade
     setVideoCinematic(true)
     // Small delay to trigger CSS transition
@@ -714,6 +717,9 @@ function SpecialMessage() {
 
     // Restore custom cursor
     document.body.classList.remove('video-playing')
+
+    // Notify audio toggles they can reappear (consumed by useFullscreenState hook)
+    document.dispatchEvent(new CustomEvent('cinematicVideoChange', { detail: { active: false } }))
 
     // Fade out overlay
     setVideoOverlayVisible(false)

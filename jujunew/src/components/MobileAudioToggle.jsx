@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAudio } from '../contexts/AudioContext'
+import { useFullscreenState } from '../hooks/useFullscreenState'
 
 function MobileAudioToggle() {
   const { isMuted, toggleMute } = useAudio()
   const [isSmallDevice, setIsSmallDevice] = useState(false)
+  const isFullscreen = useFullscreenState()
   
   const [isHeroVisible, setIsHeroVisible] = useState(true)
   const [isFooterVisible, setIsFooterVisible] = useState(false)
@@ -69,7 +71,8 @@ function MobileAudioToggle() {
 
   if (!isSmallDevice) return null
 
-  const showButton = !(isHeroVisible || isFooterVisible)
+  /* Hide when Hero or Footer is visible, OR when any fullscreen mode is active */
+  const showButton = !(isHeroVisible || isFooterVisible || isFullscreen)
 
   return (
     <>

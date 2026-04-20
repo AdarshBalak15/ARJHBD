@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAudio } from '../contexts/AudioContext'
+import { useFullscreenState } from '../hooks/useFullscreenState'
 
 /**
  * Floating mute/unmute button — purple glassmorphism style.
@@ -13,6 +14,7 @@ import { useAudio } from '../contexts/AudioContext'
 function AudioToggle() {
   const { isMuted, toggleMute } = useAudio()
   const [showTooltip, setShowTooltip] = useState(false)
+  const isFullscreen = useFullscreenState()
 
   /* ── Mobile gate: completely unmount on small screens ── */
   const [isSmallDevice, setIsSmallDevice] = useState(false)
@@ -190,7 +192,15 @@ function AudioToggle() {
            so these styles are unreachable. See isMobile gate above. */
       `}</style>
 
-      <div className="audio-toggle-wrap">
+      <div
+        className="audio-toggle-wrap"
+        style={{
+          /* Smooth hide during fullscreen — no abrupt unmount */
+          opacity: isFullscreen ? 0 : 1,
+          pointerEvents: isFullscreen ? 'none' : 'auto',
+          transition: 'opacity 0.35s ease',
+        }}
+      >
         {/* Glass tooltip */}
         <div className={`audio-toggle-tooltip${showTooltip ? ' visible' : ''}`}>
           {isMuted ? 'Unmute' : 'Mute'}

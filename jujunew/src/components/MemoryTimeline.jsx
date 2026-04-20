@@ -470,6 +470,7 @@ function MemoryTimeline() {
 
         {/* ── Timeline Container ── */}
         <div
+          className="timeline-container"
           style={{
             maxWidth: '1000px',
             margin: '0 auto',
@@ -533,53 +534,114 @@ function MemoryTimeline() {
 
         {/* ── Responsive media queries ── */}
         <style>{`
-        /* Mobile: stacked layout */
+
+        /* ═══════════════════════════════════════════════════
+           TABLET: Same centered alternating layout as desktop,
+           only image/card sizes and spacing are reduced.
+           Timeline stem stays centered; animation is identical.
+           Breakpoint: 768px – 1024px
+           ═══════════════════════════════════════════════════ */
+        @media (min-width: 768px) and (max-width: 1024px) {
+          .memories-container {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+          }
+
+          /* Slightly narrower container for tablet proportions */
+          .timeline-container {
+            max-width: 820px !important;
+          }
+
+          /* Keep the SAME 3-column alternating grid as desktop */
+          .memory-row {
+            grid-template-columns: 1fr 48px 1fr !important;
+            margin-bottom: 60px !important;
+          }
+
+          /* Constrain image width for tablet */
+          .memory-image-container {
+            width: min(220px, 55vw) !important;
+          }
+
+          /* Constrain card sizing for tablet */
+          .memory-card {
+            padding: clamp(1.2rem, 2.5vw, 1.8rem) !important;
+            max-width: 360px !important;
+          }
+
+          /* Stem line stays perfectly centered — NO override */
+        }
+
+        /* ═══════════════════════════════════════════════════
+           MOBILE: Single-column centered layout with stem
+           Breakpoint: ≤ 767px
+           ═══════════════════════════════════════════════════ */
         @media (max-width: 767px) {
           .memories-container {
             min-height: auto !important;
             padding-bottom: 2rem !important;
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
           }
+
+          /* Constrain the ENTIRE timeline container so stem + rows align */
+          .timeline-container {
+            max-width: 420px !important;
+          }
+
+          /* Switch from 3-col → 2-col (stem + content) */
           .memory-row {
-            margin-bottom: 3rem !important;
-            grid-template-columns: 1fr !important;
-            gap: 1.5rem !important;
+            display: grid !important;
+            grid-template-columns: 32px 1fr !important;
+            grid-template-rows: auto auto !important;
+            gap: 0 !important;
+            margin-bottom: 2.5rem !important;
           }
           .memory-row:last-child {
             margin-bottom: 0 !important;
           }
-          .timeline-stem-line {
-            display: none !important;
-          }
-          .memory-left {
-            justify-content: center !important;
-            padding-right: 0 !important;
-          }
-          .memory-center {
-            display: none !important;
-          }
-          .memory-right {
-            padding-left: 0 !important;
-          }
-        }
 
-        /* Tablet: compressed desktop layout */
-        @media (min-width: 768px) and (max-width: 1024px) {
-          .memory-row {
-            grid-template-columns: 1fr 40px 1fr !important;
-            margin-bottom: 60px !important;
+          /* Stem node: spans both rows, stays in column 1 */
+          .memory-center {
+            grid-column: 1 !important;
+            grid-row: 1 / 3 !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: flex-start !important;
+            padding-top: 0.8rem !important;
           }
+
+          /* Image: column 2, row 1 */
           .memory-left {
-            padding-right: clamp(12px, 2.5vw, 24px) !important;
+            grid-column: 2 !important;
+            grid-row: 1 !important;
+            justify-content: flex-start !important;
+            padding-right: 0 !important;
+            padding-left: 12px !important;
           }
+
+          /* Card: column 2, row 2 */
           .memory-right {
-            padding-left: clamp(12px, 2.5vw, 24px) !important;
+            grid-column: 2 !important;
+            grid-row: 2 !important;
+            padding-left: 12px !important;
+            padding-top: 0.8rem !important;
           }
+
+          /* Constrain image for mobile */
           .memory-image-container {
-            width: min(240px, 45vw) !important;
+            width: min(200px, 65vw) !important;
           }
+
+          /* Ensure card doesn't overflow */
           .memory-card {
-            padding: clamp(1.2rem, 2.5vw, 1.8rem) !important;
-            max-width: 360px !important;
+            max-width: 100% !important;
+          }
+
+          /* Stem line: center of the 32px node column = 16px from left */
+          .timeline-stem-line {
+            left: 16px !important;
+            transform: none !important;
           }
         }
       `}</style>
