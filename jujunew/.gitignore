@@ -39,3 +39,6 @@ lint_results.json
 
 # OS
 Thumbs.db
+
+# MaxMind GeoLite2 (large binary — download separately)
+*.mmdb

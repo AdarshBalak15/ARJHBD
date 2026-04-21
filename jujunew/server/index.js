@@ -2,9 +2,11 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { initDB } from './config/db.js';
-import unlockRouter  from './routes/logUnlock.js'; // server-side geo
-import logLoginRouter from './routes/logLogin.js';  // frontend-fed data
-import authRouter from './routes/auth.js'; // true login controller
+import unlockRouter    from './routes/logUnlock.js';  // server-side geo
+import logLoginRouter  from './routes/logLogin.js';   // frontend-fed data
+import authRouter      from './routes/auth.js';        // true login controller
+import trackUserRouter from './routes/trackUser.js';   // IP-based user tracking
+import { trackUserRateLimiter } from './middleware/rateLimiter.js';
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -23,9 +25,10 @@ app.use(cors({
 app.use(express.json());
 
 // ── Routes ────────────────────────────────────────────────────────────────
-app.use('/api/unlock',    unlockRouter);    // server-side geo (backup route)
-app.use('/api/log-login', logLoginRouter);  // PRIMARY: frontend sends all data
-app.use('/api/auth',      authRouter);      // LOGIN CONTROLLER
+app.use('/api/unlock',     unlockRouter);                          // server-side geo (backup route)
+app.use('/api/log-login',  logLoginRouter);                        // PRIMARY: frontend sends all data
+app.use('/api/auth',       authRouter);                            // LOGIN CONTROLLER
+app.use('/api/track-user', trackUserRateLimiter, trackUserRouter); // IP metadata tracker (rate-limited)
 
 // Health check
 app.get('/api/health', (_req, res) => {
@@ -64,8 +67,10 @@ initDB().then(() => {
   app.listen(PORT, () => {
     console.log(`[SERVER] 🚀 Express running → http://localhost:${PORT}`);
     console.log(`[SERVER] 📌 Routes:`);
-    console.log(`         POST /api/log-login  — primary tracking endpoint`);
-    console.log(`         POST /api/unlock     — server-side geo fallback`);
-    console.log(`         GET  /api/health     — health check`);
+    console.log(`         POST /api/log-login   — primary tracking endpoint`);
+    console.log(`         POST /api/unlock      — server-side geo fallback`);
+    console.log(`         POST /api/track-user  — IP metadata tracker`);
+    console.log(`         GET  /api/track-user  — IP metadata tracker (GET)`);
+    console.log(`         GET  /api/health      — health check`);
   });
 });
