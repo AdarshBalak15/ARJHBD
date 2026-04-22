@@ -1,64 +1,33 @@
-const { Pool } = require("pg");
+const { createClient } = require("@supabase/supabase-js");
 const nodemailer = require("nodemailer");
 
 /**
  * Netlify Function: login
- * DEBUG VERSION — Heavy logging to identify geo failure root cause
+ * Migrated from Neon (pg/Pool) to Supabase
  */
 
 const CORRECT_PASSWORD = "Arju!0405";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DB Pool (persistent across warm invocations)
+// Supabase Client (persistent across warm invocations)
 // ─────────────────────────────────────────────────────────────────────────────
-let pool = null;
+let supabase = null;
 
-function getPool() {
-  if (!pool && process.env.DATABASE_URL) {
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-      max: 3,
-      idleTimeoutMillis: 10000,
-      connectionTimeoutMillis: 5000,
-    });
-    console.log("[DB] Pool created");
+function getSupabase() {
+  if (!supabase && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+    console.log("[DB] Supabase client created");
   }
-  return pool;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Auto-create table + index
-// ─────────────────────────────────────────────────────────────────────────────
-let tableReady = false;
-
-async function ensureTable(db) {
-  if (tableReady) return;
-  try {
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS login_logs (
-        id          SERIAL PRIMARY KEY,
-        user_id     VARCHAR(255),
-        ip_address  VARCHAR(50),
-        city        VARCHAR(100),
-        region      VARCHAR(100),
-        country     VARCHAR(100),
-        latitude    DECIMAL(10, 6),
-        longitude   DECIMAL(10, 6),
-        timezone    VARCHAR(100),
-        device_info TEXT,
-        status      VARCHAR(20),
-        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    await db.query(`
-      CREATE INDEX IF NOT EXISTS idx_login_logs_ip ON login_logs (ip_address);
-    `);
-    tableReady = true;
-    console.log("[DB] Table 'login_logs' + index ready");
-  } catch (err) {
-    console.error("[DB] Table creation error:", err.message);
-  }
+  return supabase;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -248,22 +217,21 @@ exports.handler = async (event) => {
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // 6️⃣  INSERT INTO login_logs (NO SCHEMA CHANGE)
+    // 6️⃣  INSERT INTO login_logs VIA SUPABASE (replaces raw SQL)
     // ═════════════════════════════════════════════════════════════════════════
     let dbSuccess = false;
 
     try {
-      const db = getPool();
+      const db = getSupabase();
 
       if (!db) {
-        console.error("❌ DATABASE_URL NOT SET — cannot insert");
+        console.error("❌ SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY NOT SET — cannot insert");
       } else {
-        await ensureTable(db);
-        console.log("DB Connected ✅");
+        console.log("Supabase client ready ✅");
 
-        const insertValues = [
-          "arju",
-          ip,
+        const insertData = {
+          user_id: "arju",
+          ip_address: ip,
           city,
           region,
           country,
@@ -272,19 +240,20 @@ exports.handler = async (event) => {
           timezone,
           device_info,
           status,
-        ];
+        };
 
-        console.log("INSERT VALUES:", JSON.stringify(insertValues));
+        console.log("INSERT DATA:", JSON.stringify(insertData));
 
-        await db.query(
-          `INSERT INTO login_logs
-            (user_id, ip_address, city, region, country, latitude, longitude, timezone, device_info, status, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())`,
-          insertValues
-        );
+        const { error } = await db
+          .from('login_logs')
+          .insert([insertData]);
 
-        dbSuccess = true;
-        console.log("✅ DB INSERT SUCCESS");
+        if (error) {
+          console.error("❌ SUPABASE INSERT ERROR:", error.message);
+        } else {
+          dbSuccess = true;
+          console.log("✅ DB INSERT SUCCESS");
+        }
       }
     } catch (dbErr) {
       console.error("❌ DB INSERT ERROR:", dbErr.message);

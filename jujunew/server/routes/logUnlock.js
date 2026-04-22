@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import pool from '../config/db.js';
+import supabase from '../config/db.js';
 
 const router = Router();
 
@@ -83,27 +83,29 @@ router.post('/', async (req, res) => {
     // Fetch geo from ipapi.co (server-side — never touches frontend)
     const geo = await fetchGeoData(ip);
 
-    // Parameterized insert — fully SQL-injection safe
-    const { rows } = await pool.query(
-      `INSERT INTO login_activity
-         (user_id, ip_address, city, region, country, latitude, longitude, timezone, device_info)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING id, created_at`,
-      [
-        userId,
-        ip,
-        geo.city,
-        geo.region,
-        geo.country_name,
-        geo.latitude,
-        geo.longitude,
-        geo.timezone,
-        deviceInfo,
-      ]
-    );
+    // Insert using Supabase — SQL injection safe by design
+    const { data: row, error } = await supabase
+      .from('login_activity')
+      .insert([{
+        user_id:    userId,
+        ip_address: ip,
+        city:       geo.city,
+        region:     geo.region,
+        country:    geo.country_name,
+        latitude:   geo.latitude,
+        longitude:  geo.longitude,
+        timezone:   geo.timezone,
+        device_info: deviceInfo,
+      }])
+      .select('id, created_at')
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
 
     console.log(
-      `[LOG] ✅ Unlock activity recorded — id:${rows[0].id} | ip:${ip} | ` +
+      `[LOG] ✅ Unlock activity recorded — id:${row.id} | ip:${ip} | ` +
       `${geo.city}, ${geo.region}, ${geo.country_name} | user:${userId}`
     );
   } catch (err) {

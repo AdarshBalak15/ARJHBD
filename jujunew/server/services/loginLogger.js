@@ -1,8 +1,8 @@
-import pool from '../config/db.js';
+import supabase from '../config/db.js';
 
 /**
  * Reusable logger function for login attempts
- * Inserts a record into the login_attempts table.
+ * Inserts a record into the login_attempts table via Supabase.
  * Never crashes the main application if logging fails.
  */
 export async function logLoginAttempt(data) {
@@ -20,28 +20,26 @@ export async function logLoginAttempt(data) {
   } = data;
 
   try {
-    const query = `
-      INSERT INTO login_attempts
-        (user_id, ip_address, city, region, country, latitude, longitude, timezone, device_info, status)
-      VALUES
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING id
-    `;
+    const { error } = await supabase
+      .from('login_attempts')
+      .insert([{
+        user_id:     user_id || 'UNKNOWN',
+        ip_address:  ip_address || 'unknown',
+        city:        city || 'unknown',
+        region:      region || 'unknown',
+        country:     country || 'unknown',
+        latitude:    latitude != null ? Number(latitude) : null,
+        longitude:   longitude != null ? Number(longitude) : null,
+        timezone:    timezone || 'unknown',
+        device_info: device_info || 'unknown',
+        status,      // 'SUCCESS' or 'FAILED'
+      }]);
 
-    const values = [
-      user_id || 'UNKNOWN',
-      ip_address || 'unknown',
-      city || 'unknown',
-      region || 'unknown',
-      country || 'unknown',
-      latitude != null ? Number(latitude) : null,
-      longitude != null ? Number(longitude) : null,
-      timezone || 'unknown',
-      device_info || 'unknown',
-      status // 'SUCCESS' or 'FAILED'
-    ];
+    if (error) {
+      console.error(`[LOGIN LOGGER] ❌ Supabase insert failed:`, error.message);
+      return false;
+    }
 
-    await pool.query(query, values);
     console.log(`[LOGIN LOGGER] Login attempt recorded: ${status} (User: ${user_id || 'UNKNOWN'})`);
     return true;
   } catch (error) {

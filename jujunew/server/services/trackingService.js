@@ -6,13 +6,13 @@
 //   2. Geolocation lookup (geoService — cached, retry, fallback)
 //   3. User-agent parsing (uaParser)
 //   4. Data validation & normalization
-//   5. Database persistence (PostgreSQL)
+//   5. Database persistence (Supabase)
 //
 // Exposes a single function: trackUser(req, userId?)
 // Returns the full structured metadata object.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import pool from '../config/db.js';
+import supabase from '../config/db.js';
 import { extractClientIP, classifyIP, detectProxyIndicators } from '../utils/ipUtils.js';
 import { parseUserAgent } from '../utils/uaParser.js';
 import { fetchGeoData } from './geoService.js';
@@ -79,59 +79,51 @@ function validateAndNormalize(raw) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DATABASE INSERT — parameterized query (SQL injection safe)
+// DATABASE INSERT — uses Supabase client (SQL injection safe by design)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Insert a tracking record into the user_tracking table.
- * Uses parameterized queries to prevent SQL injection.
+ * Insert a tracking record into the user_tracking table using Supabase.
+ * Supabase client parameterizes all values automatically — no SQL injection risk.
  *
  * @param {object} data — validated tracking data
  * @returns {object | null} — inserted row (with id + created_at), or null on failure
  */
 async function insertTrackingRecord(data) {
-  const query = `
-    INSERT INTO user_tracking (
-      user_id, ip_address, city, region, country,
-      latitude, longitude, timezone, isp, org,
-      device_info, browser, browser_version, os, os_version,
-      device_type, ip_type, is_proxy, proxy_indicators, status
-    )
-    VALUES (
-      $1, $2, $3, $4, $5,
-      $6, $7, $8, $9, $10,
-      $11, $12, $13, $14, $15,
-      $16, $17, $18, $19, $20
-    )
-    RETURNING *
-  `;
-
-  const values = [
-    data.user_id,       // $1
-    data.ip_address,    // $2
-    data.city,          // $3
-    data.region,        // $4
-    data.country,       // $5
-    data.latitude,      // $6
-    data.longitude,     // $7
-    data.timezone,      // $8
-    data.isp,           // $9
-    data.org,           // $10
-    data.device_info,   // $11
-    data.browser,       // $12
-    data.browser_version, // $13
-    data.os,            // $14
-    data.os_version,    // $15
-    data.device_type,   // $16
-    data.ip_type,       // $17
-    data.is_proxy,      // $18
-    data.proxy_indicators, // $19
-    data.status,        // $20
-  ];
-
   try {
-    const { rows } = await pool.query(query, values);
-    return rows[0];
+    const { data: rows, error } = await supabase
+      .from('user_tracking')
+      .insert([{
+        user_id:          data.user_id,
+        ip_address:       data.ip_address,
+        city:             data.city,
+        region:           data.region,
+        country:          data.country,
+        latitude:         data.latitude,
+        longitude:        data.longitude,
+        timezone:         data.timezone,
+        isp:              data.isp,
+        org:              data.org,
+        device_info:      data.device_info,
+        browser:          data.browser,
+        browser_version:  data.browser_version,
+        os:               data.os,
+        os_version:       data.os_version,
+        device_type:      data.device_type,
+        ip_type:          data.ip_type,
+        is_proxy:         data.is_proxy,
+        proxy_indicators: data.proxy_indicators,
+        status:           data.status,
+      }])
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('[TRACKING] ❌ Supabase INSERT FAILED:', error.message);
+      return null;
+    }
+
+    return rows;
   } catch (err) {
     console.error('[TRACKING] ❌ DB INSERT FAILED:', err.message);
     return null;
@@ -205,7 +197,7 @@ export async function trackUser(req, userId = 'anonymous') {
     // ── Step 5: Validate and normalize ─────────────────────────────────────
     const validated = validateAndNormalize(rawData);
 
-    // ── Step 6: Insert into PostgreSQL ─────────────────────────────────────
+    // ── Step 6: Insert into Supabase ───────────────────────────────────────
     const dbRecord = await insertTrackingRecord(validated);
     const dbInserted = dbRecord !== null;
 

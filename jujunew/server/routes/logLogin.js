@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import pool from '../config/db.js';
+import supabase from '../config/db.js';
 import { sendAlertEmail } from '../services/mailService.js';
 
 const router = Router();
@@ -25,16 +25,14 @@ function validate(body) {
 // ─────────────────────────────────────────────────────────────────────────────
 async function detectAnomaly(userId, city, deviceInfo) {
   try {
-    const { rows } = await pool.query(
-      `SELECT city, device_info
-       FROM   login_activity
-       WHERE  user_id = $1
-       ORDER  BY created_at DESC
-       LIMIT  1`,
-      [userId]
-    );
+    const { data: rows, error } = await supabase
+      .from('login_activity')
+      .select('city, device_info')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-    if (rows.length === 0) {
+    if (error || !rows || rows.length === 0) {
       return { status: 'normal', reasons: [] };
     }
 
@@ -64,7 +62,7 @@ async function detectAnomaly(userId, city, deviceInfo) {
 // Full verification pipeline:
 //   Step 1 → Validate input
 //   Step 2 → Anomaly detection
-//   Step 3 → INSERT into PostgreSQL
+//   Step 3 → INSERT into Supabase (login_activity)
 //   Step 4 → Send email alert (only if DB succeeded)
 //   Step 5 → Return verification flags
 // ─────────────────────────────────────────────────────────────────────────────
@@ -97,31 +95,33 @@ router.post('/', async (req, res) => {
     console.warn(`[LOG-LOGIN] 🚨 Suspicious login for "${user_id}":`, reasons.join(' | '));
   }
 
-  // ── Step 3: INSERT into PostgreSQL ─────────────────────────────────────────
+  // ── Step 3: INSERT into Supabase (login_activity) ──────────────────────────
   let dbRecord  = null;
   let dbSuccess = false;
 
   try {
-    const { rows } = await pool.query(
-      `INSERT INTO login_activity
-         (user_id, ip_address, city, region, country,
-          latitude, longitude, timezone, device_info, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-       RETURNING *`,
-      [
-        user_id.trim()                    || 'unknown',
-        ip_address.trim()                 || 'unknown',
-        (city      || 'unknown').trim(),
-        (region    || 'unknown').trim(),
-        (country   || 'unknown').trim(),
-        latitude  != null ? Number(latitude)  : null,
-        longitude != null ? Number(longitude) : null,
-        (timezone  || 'unknown').trim(),
-        device_info.trim()                || 'unknown',
+    const { data: row, error } = await supabase
+      .from('login_activity')
+      .insert([{
+        user_id:    user_id.trim()                    || 'unknown',
+        ip_address: ip_address.trim()                 || 'unknown',
+        city:       (city      || 'unknown').trim(),
+        region:     (region    || 'unknown').trim(),
+        country:    (country   || 'unknown').trim(),
+        latitude:   latitude  != null ? Number(latitude)  : null,
+        longitude:  longitude != null ? Number(longitude) : null,
+        timezone:   (timezone  || 'unknown').trim(),
+        device_info: device_info.trim()               || 'unknown',
         status,
-      ]
-    );
-    dbRecord  = rows[0];
+      }])
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    dbRecord  = row;
     dbSuccess = true;
 
     console.log(

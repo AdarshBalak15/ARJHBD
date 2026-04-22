@@ -33,6 +33,29 @@ function App() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // ── Automatic Visitor Tracking ──────────────────────────────────────────
+  // Fires ONCE on page load. Calls Netlify serverless function which:
+  //   1. Extracts real client IP from Netlify headers
+  //   2. Fetches geolocation (city, region, country, lat/lon, timezone)
+  //   3. Parses user-agent (browser, OS, device type)
+  //   4. Inserts everything into Supabase user_tracking table
+  //
+  // Fire-and-forget: never blocks UI, never shows errors to user.
+  useEffect(() => {
+    const trackVisitor = async () => {
+      try {
+        await fetch('/.netlify/functions/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ page: window.location.pathname }),
+        })
+      } catch {
+        // Silent — tracking failure must never affect user experience
+      }
+    }
+    trackVisitor()
+  }, [])
+
   /*
    * AudioToggle visibility — 3-observer approach:
    *
