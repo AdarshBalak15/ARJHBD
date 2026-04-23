@@ -100,3 +100,11 @@ export const trackUserRateLimiter = createRateLimiter({
   maxRequests: 30,
   message:    'Tracking rate limit exceeded. Please wait before retrying.',
 });
+
+// Login rate limiter — strict: 5 attempts per minute per IP
+// Prevents brute-force password attacks
+export const loginRateLimiter = createRateLimiter({
+  windowMs:   60 * 1000,  // 1 minute
+  maxRequests: 5,
+  message:    'Too many login attempts. Please wait 1 minute before trying again.',
+});

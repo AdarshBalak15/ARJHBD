@@ -38,67 +38,41 @@ const supabase = createClient(
 // ─────────────────────────────────────────────────────────────────────────────
 // initDB — verify Supabase connectivity on startup
 //
-// Unlike the old pg/Pool approach, Supabase handles table creation via
-// the dashboard or migrations. This function just verifies connectivity
-// and logs the status.
+// Checks the two remaining tables:
+//   1. login_events  (unified: replaces login_logs + login_attempts + login_activity)
+//   2. user_tracking (unchanged — deep visitor metadata)
 // ─────────────────────────────────────────────────────────────────────────────
 export async function initDB() {
   try {
-    // Quick connectivity test — try to select from a known table
-    // If the table doesn't exist yet, we'll get a specific error we can handle
-    const { data, error } = await supabase
+    // Check login_events (unified table)
+    const { error: eventsErr } = await supabase
+      .from('login_events')
+      .select('id')
+      .limit(1);
+
+    if (eventsErr && (eventsErr.code === '42P01' || eventsErr.message?.includes('does not exist'))) {
+      console.warn(
+        '[DB] ⚠️  Table "login_events" not found. Please run the migration SQL in Supabase Dashboard.\n' +
+        '[DB]    This table replaces: login_logs, login_attempts, login_activity'
+      );
+    } else if (eventsErr) {
+      console.warn(`[DB] ⚠️  login_events query warning: ${eventsErr.message}`);
+    } else {
+      console.log('[DB] ✅ Table "login_events" is ready.');
+    }
+
+    // Check user_tracking table
+    const { error: trackingErr } = await supabase
       .from('user_tracking')
       .select('id')
       .limit(1);
 
-    if (error) {
-      // Table might not exist yet — this is expected on first deploy
-      if (error.code === '42P01' || error.message?.includes('does not exist')) {
-        console.warn(
-          '[DB] ⚠️  Tables not found in Supabase. Please run the SQL migration.\n' +
-          '[DB]    See the migration artifact for required SQL statements.'
-        );
-      } else {
-        console.warn(`[DB] ⚠️  Supabase query warning: ${error.message}`);
-      }
+    if (trackingErr && (trackingErr.code === '42P01' || trackingErr.message?.includes('does not exist'))) {
+      console.warn('[DB] ⚠️  Table "user_tracking" not found — create it in Supabase dashboard.');
+    } else if (trackingErr) {
+      console.warn(`[DB] ⚠️  user_tracking query warning: ${trackingErr.message}`);
     } else {
-      console.log('[DB] ✅ Supabase connected — user_tracking table ready.');
-    }
-
-    // Also check login_activity table
-    const { error: loginErr } = await supabase
-      .from('login_activity')
-      .select('id')
-      .limit(1);
-
-    if (loginErr && loginErr.code === '42P01') {
-      console.warn('[DB] ⚠️  Table "login_activity" not found — create it in Supabase dashboard.');
-    } else if (!loginErr) {
-      console.log('[DB] ✅ Table "login_activity" is ready.');
-    }
-
-    // Check login_attempts table
-    const { error: attemptsErr } = await supabase
-      .from('login_attempts')
-      .select('id')
-      .limit(1);
-
-    if (attemptsErr && attemptsErr.code === '42P01') {
-      console.warn('[DB] ⚠️  Table "login_attempts" not found — create it in Supabase dashboard.');
-    } else if (!attemptsErr) {
-      console.log('[DB] ✅ Table "login_attempts" is ready.');
-    }
-
-    // Check login_logs table (used by Netlify function)
-    const { error: logsErr } = await supabase
-      .from('login_logs')
-      .select('id')
-      .limit(1);
-
-    if (logsErr && logsErr.code === '42P01') {
-      console.warn('[DB] ⚠️  Table "login_logs" not found — create it in Supabase dashboard.');
-    } else if (!logsErr) {
-      console.log('[DB] ✅ Table "login_logs" is ready.');
+      console.log('[DB] ✅ Table "user_tracking" is ready.');
     }
 
   } catch (err) {

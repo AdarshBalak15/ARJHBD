@@ -3,45 +3,57 @@ import { motion } from 'framer-motion'
 
 const MinimalFooter = lazy(() => import('./MinimalFooter'))
 
-const CORRECT_PASSWORD = "Arju!0405"
-
-// Session guard obsolete
+// ─────────────────────────────────────────────────────────────────────────────
+// SECURITY: Password is NEVER stored in frontend code.
+// The password is sent to the backend API which validates it using bcrypt.
+// ─────────────────────────────────────────────────────────────────────────────
 
 function PasswordScreen({ onUnlock }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
   const [shake, setShake] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  const handleUnlockFlow = (e) => {
+  const handleUnlockFlow = async (e) => {
     if (e) e.preventDefault()
+    if (loading) return // Prevent double-submit
 
-    if (password === CORRECT_PASSWORD) {
-      // ✅ Unlock UI instantly — zero delay
-      onUnlock()
+    setLoading(true)
 
-      // Background: log successful attempt via Netlify function (non-blocking)
-      fetch('/.netlify/functions/login', {
+    try {
+      // Send password to backend API for secure validation
+      const response = await fetch('/.netlify/functions/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
-      }).catch(() => { /* silent — login already succeeded */ })
+      })
 
-    } else {
-      // Wrong password → show error immediately
+      const data = await response.json()
+
+      if (data.success) {
+        // ✅ Backend confirmed password is correct — unlock UI
+        onUnlock()
+      } else {
+        // ❌ Wrong password — show error
+        setError(true)
+        setShake(true)
+        setTimeout(() => {
+          setShake(false)
+          setError(false)
+        }, 500)
+      }
+    } catch (err) {
+      // Network error — show error state
+      console.error('Login request failed:', err.message)
       setError(true)
       setShake(true)
       setTimeout(() => {
         setShake(false)
         setError(false)
       }, 500)
-
-      // Background: log failed attempt via Netlify function (non-blocking)
-      fetch('/.netlify/functions/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      }).catch(() => { /* silent — error UI already shown */ })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -142,6 +154,7 @@ function PasswordScreen({ onUnlock }) {
                 }}
                 animate={shake ? { x: [0, -10, 10, -10, 10, 0] } : {}}
                 transition={{ duration: 0.4 }}
+                disabled={loading}
                 style={{
                   width: '100%',
                   boxSizing: 'border-box',
@@ -158,6 +171,7 @@ function PasswordScreen({ onUnlock }) {
                   transition: 'all 0.3s ease',
                   textAlign: 'center',
                   letterSpacing: '0.08em',
+                  opacity: loading ? 0.6 : 1,
                 }}
                 onFocus={(e) => {
                   e.target.style.boxShadow = '0 0 20px rgba(157, 78, 221, 0.35)'
@@ -229,11 +243,12 @@ function PasswordScreen({ onUnlock }) {
 
             <motion.button
               type="submit"
+              disabled={loading}
               whileHover={{
-                scale: 1.04,
-                boxShadow: '0 0 28px rgba(157, 78, 221, 0.55), 0 4px 16px rgba(0,0,0,0.3)',
+                scale: loading ? 1 : 1.04,
+                boxShadow: loading ? undefined : '0 0 28px rgba(157, 78, 221, 0.55), 0 4px 16px rgba(0,0,0,0.3)',
               }}
-              whileTap={{ scale: 0.97 }}
+              whileTap={{ scale: loading ? 1 : 0.97 }}
               style={{
                 fontFamily: "'Poppins', sans-serif",
                 fontSize: '1rem',
@@ -243,14 +258,15 @@ function PasswordScreen({ onUnlock }) {
                 border: 'none',
                 borderRadius: '14px',
                 padding: '1rem',
-                cursor: 'pointer',
+                cursor: loading ? 'wait' : 'pointer',
                 transition: 'all 0.3s ease',
                 marginTop: '0.5rem',
                 boxShadow: '0 0 20px rgba(124, 58, 237, 0.35), 0 4px 12px rgba(0,0,0,0.25)',
                 letterSpacing: '0.04em',
+                opacity: loading ? 0.7 : 1,
               }}
             >
-              Unlock
+              {loading ? 'Verifying...' : 'Unlock'}
             </motion.button>
           </motion.form>
         </motion.div>
@@ -277,4 +293,3 @@ function PasswordScreen({ onUnlock }) {
 }
 
 export default PasswordScreen
-

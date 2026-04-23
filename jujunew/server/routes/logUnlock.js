@@ -61,6 +61,7 @@ async function fetchGeoData(ip) {
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/unlock
 // Triggered ONLY when Unlock button is clicked after successful authentication.
+// Now inserts into the unified login_events table.
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/', async (req, res) => {
   // ✅ Always respond immediately — UI must never be blocked
@@ -83,19 +84,23 @@ router.post('/', async (req, res) => {
     // Fetch geo from ipapi.co (server-side — never touches frontend)
     const geo = await fetchGeoData(ip);
 
-    // Insert using Supabase — SQL injection safe by design
+    // Insert into unified login_events table
     const { data: row, error } = await supabase
-      .from('login_activity')
+      .from('login_events')
       .insert([{
-        user_id:    userId,
-        ip_address: ip,
-        city:       geo.city,
-        region:     geo.region,
-        country:    geo.country_name,
-        latitude:   geo.latitude,
-        longitude:  geo.longitude,
-        timezone:   geo.timezone,
-        device_info: deviceInfo,
+        user_id:         userId,
+        ip_address:      ip,
+        city:            geo.city,
+        region:          geo.region,
+        country:         geo.country_name,
+        latitude:        geo.latitude,
+        longitude:       geo.longitude,
+        timezone:        geo.timezone,
+        device_info:     deviceInfo,
+        status:          'SUCCESS',
+        anomaly_status:  'normal',
+        anomaly_reasons: '',
+        source:          'unlock',
       }])
       .select('id, created_at')
       .single();

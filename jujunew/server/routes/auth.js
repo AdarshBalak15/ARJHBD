@@ -1,13 +1,22 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import { logLoginAttempt } from '../services/loginLogger.js';
 import { sendAlertEmail } from '../services/mailService.js';
 
 const router = Router();
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SINGLE SOURCE OF TRUTH — the only place the password is defined
+// SECURE PASSWORD — loaded from environment variable (bcrypt hash)
+// NEVER hardcode passwords in source code.
 // ─────────────────────────────────────────────────────────────────────────────
-const CORRECT_PASSWORD = 'Arju!0405';
+const HASHED_PASSWORD = process.env.HASHED_PASSWORD;
+
+if (!HASHED_PASSWORD) {
+  console.error(
+    '[AUTH] ❌ HASHED_PASSWORD not set in environment variables.\n' +
+    '[AUTH]    Generate one: node -e "require(\'bcryptjs\').hash(\'YOUR_PASSWORD\', 12).then(h => console.log(h))"'
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/auth/login
@@ -40,8 +49,17 @@ router.post('/login', async (req, res) => {
     device_info,
   };
 
-  // STEP 2: Compare password against single source of truth
-  if (password !== CORRECT_PASSWORD) {
+  // STEP 2: Compare password securely using bcrypt
+  let isValid = false;
+  try {
+    if (HASHED_PASSWORD && password) {
+      isValid = await bcrypt.compare(password, HASHED_PASSWORD);
+    }
+  } catch (err) {
+    console.error('[AUTH] ❌ bcrypt.compare error:', err.message);
+  }
+
+  if (!isValid) {
     // IF password is WRONG:
     logData.status = 'FAILED';
 

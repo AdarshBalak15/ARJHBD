@@ -1,12 +1,13 @@
 const { createClient } = require("@supabase/supabase-js");
 const nodemailer = require("nodemailer");
+const bcrypt = require("bcryptjs");
 
 /**
  * Netlify Function: login
- * Migrated from Neon (pg/Pool) to Supabase
+ * 
+ * SECURITY: Password validated via bcrypt against HASHED_PASSWORD env var.
+ * DATABASE: Inserts into unified login_events table.
  */
-
-const CORRECT_PASSWORD = "Arju!0405";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Supabase Client (persistent across warm invocations)
@@ -109,24 +110,35 @@ exports.handler = async (event) => {
     // ── Parse request ────────────────────────────────────────────────────────
     const body = JSON.parse(event.body || "{}");
     const password = body.password || "";
-    const isValid = password === CORRECT_PASSWORD;
-    const status = isValid ? "SUCCESS" : "FAILED";
     const device_info = event.headers["user-agent"] || "unknown";
     const timestamp = new Date().toISOString();
 
     // ═════════════════════════════════════════════════════════════════════════
-    // 1️⃣  FORCE CLEAN IP EXTRACTION
+    // 1️⃣  SECURE PASSWORD VALIDATION (bcrypt)
     // ═════════════════════════════════════════════════════════════════════════
-    console.log("======== DEBUG START ========");
-    console.log("HEADERS:", JSON.stringify(event.headers));
+    const HASHED_PASSWORD = process.env.HASHED_PASSWORD;
+    let isValid = false;
 
+    if (HASHED_PASSWORD && password) {
+      try {
+        isValid = await bcrypt.compare(password, HASHED_PASSWORD);
+      } catch (err) {
+        console.error("[AUTH] bcrypt.compare error:", err.message);
+      }
+    } else {
+      console.error("[AUTH] ❌ HASHED_PASSWORD env var not set!");
+    }
+
+    const status = isValid ? "SUCCESS" : "FAILED";
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // 2️⃣  FORCE CLEAN IP EXTRACTION
+    // ═════════════════════════════════════════════════════════════════════════
     let rawIp =
       event.headers["x-nf-client-connection-ip"] ||
       event.headers["x-forwarded-for"] ||
       event.headers["client-ip"] ||
       "";
-
-    console.log("RAW IP:", rawIp);
 
     let ip = rawIp;
 
@@ -138,54 +150,42 @@ exports.handler = async (event) => {
       ip = "8.8.8.8"; // fallback
     }
 
-    console.log("FINAL IP USED:", ip);
+    console.log("[AUTH] IP:", ip, "| Status:", status);
 
     // ═════════════════════════════════════════════════════════════════════════
-    // 2️⃣  PRIMARY GEO API: ipwho.is
+    // 3️⃣  PRIMARY GEO API: ipwho.is
     // ═════════════════════════════════════════════════════════════════════════
     let geoData = null;
 
     try {
-      console.log("CALLING PRIMARY API: https://ipwho.is/" + ip);
       const res = await fetch(`https://ipwho.is/${ip}`);
       const data = await res.json();
 
-      console.log("PRIMARY API RAW RESPONSE:", JSON.stringify(data));
-
       if (data && data.success !== false) {
         geoData = data;
-        console.log("PRIMARY API: ✅ SUCCESS");
-      } else {
-        console.log("PRIMARY API: ❌ returned success=false");
       }
     } catch (err) {
-      console.log("PRIMARY API ERROR:", err.message);
+      console.log("[GEO] Primary API error:", err.message);
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // 3️⃣  FALLBACK GEO API: ipapi.co
+    // 4️⃣  FALLBACK GEO API: ipapi.co
     // ═════════════════════════════════════════════════════════════════════════
     if (!geoData) {
       try {
-        console.log("CALLING BACKUP API: https://ipapi.co/" + ip + "/json/");
         const res = await fetch(`https://ipapi.co/${ip}/json/`);
         const backupData = await res.json();
 
-        console.log("BACKUP API RAW RESPONSE:", JSON.stringify(backupData));
-
         if (backupData && !backupData.error) {
           geoData = backupData;
-          console.log("BACKUP API: ✅ SUCCESS");
-        } else {
-          console.log("BACKUP API: ❌ returned error:", backupData?.reason);
         }
       } catch (err) {
-        console.log("BACKUP API ERROR:", err.message);
+        console.log("[GEO] Backup API error:", err.message);
       }
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // 4️⃣  FORCE FIELD EXTRACTION (NEVER UNDEFINED)
+    // 5️⃣  FORCE FIELD EXTRACTION (NEVER UNDEFINED)
     // ═════════════════════════════════════════════════════════════════════════
     const city = geoData?.city || geoData?.town || "unknown";
     const region = geoData?.region || geoData?.region_name || "unknown";
@@ -197,27 +197,8 @@ exports.handler = async (event) => {
         ? (geoData.timezone.id || "unknown")
         : (geoData?.timezone || "unknown");
 
-    console.log("FINAL EXTRACTED DATA:", JSON.stringify({
-      city,
-      region,
-      country,
-      latitude,
-      longitude,
-      timezone,
-    }));
-
     // ═════════════════════════════════════════════════════════════════════════
-    // 5️⃣  VERIFY BEFORE INSERT
-    // ═════════════════════════════════════════════════════════════════════════
-    if (city === "unknown" && region === "unknown" && country === "unknown") {
-      console.log("⚠️ ERROR: GEO DATA NOT RESOLVED — all fields are 'unknown'");
-      console.log("⚠️ geoData was:", geoData ? JSON.stringify(geoData) : "null");
-    } else {
-      console.log("✅ GEO DATA RESOLVED SUCCESSFULLY");
-    }
-
-    // ═════════════════════════════════════════════════════════════════════════
-    // 6️⃣  INSERT INTO login_logs VIA SUPABASE (replaces raw SQL)
+    // 6️⃣  INSERT INTO login_events (unified table)
     // ═════════════════════════════════════════════════════════════════════════
     let dbSuccess = false;
 
@@ -225,10 +206,8 @@ exports.handler = async (event) => {
       const db = getSupabase();
 
       if (!db) {
-        console.error("❌ SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY NOT SET — cannot insert");
+        console.error("❌ SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY NOT SET");
       } else {
-        console.log("Supabase client ready ✅");
-
         const insertData = {
           user_id: "arju",
           ip_address: ip,
@@ -240,19 +219,20 @@ exports.handler = async (event) => {
           timezone,
           device_info,
           status,
+          anomaly_status: "normal",
+          anomaly_reasons: "",
+          source: "netlify",
         };
 
-        console.log("INSERT DATA:", JSON.stringify(insertData));
-
         const { error } = await db
-          .from('login_logs')
+          .from('login_events')
           .insert([insertData]);
 
         if (error) {
-          console.error("❌ SUPABASE INSERT ERROR:", error.message);
+          console.error("❌ DB INSERT ERROR:", error.message);
         } else {
           dbSuccess = true;
-          console.log("✅ DB INSERT SUCCESS");
+          console.log("✅ DB INSERT SUCCESS into login_events");
         }
       }
     } catch (dbErr) {
@@ -270,19 +250,7 @@ exports.handler = async (event) => {
       });
     }
 
-    console.log("======== DEBUG END ========");
-    console.log("SUMMARY:", JSON.stringify({
-      status,
-      ip,
-      city,
-      region,
-      country,
-      latitude,
-      longitude,
-      timezone,
-      dbSuccess,
-      emailSent,
-    }));
+    console.log("[SUMMARY]", JSON.stringify({ status, ip, city, country, dbSuccess, emailSent }));
 
     // ── Response ─────────────────────────────────────────────────────────────
     return {

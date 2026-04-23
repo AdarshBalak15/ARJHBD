@@ -22,13 +22,15 @@ function validate(body) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Anomaly detection — compares with last login for same user_id
+// Now queries the unified login_events table
 // ─────────────────────────────────────────────────────────────────────────────
 async function detectAnomaly(userId, city, deviceInfo) {
   try {
     const { data: rows, error } = await supabase
-      .from('login_activity')
+      .from('login_events')
       .select('city, device_info')
       .eq('user_id', userId)
+      .eq('status', 'SUCCESS')
       .order('created_at', { ascending: false })
       .limit(1);
 
@@ -62,7 +64,7 @@ async function detectAnomaly(userId, city, deviceInfo) {
 // Full verification pipeline:
 //   Step 1 → Validate input
 //   Step 2 → Anomaly detection
-//   Step 3 → INSERT into Supabase (login_activity)
+//   Step 3 → INSERT into login_events (unified table)
 //   Step 4 → Send email alert (only if DB succeeded)
 //   Step 5 → Return verification flags
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,34 +87,37 @@ router.post('/', async (req, res) => {
   }
 
   // ── Step 2: Anomaly detection ──────────────────────────────────────────────
-  const { status, reasons } = await detectAnomaly(
+  const { status: anomalyStatus, reasons } = await detectAnomaly(
     user_id.trim(),
     city || '',
     device_info.trim()
   );
 
-  if (status === 'suspicious') {
+  if (anomalyStatus === 'suspicious') {
     console.warn(`[LOG-LOGIN] 🚨 Suspicious login for "${user_id}":`, reasons.join(' | '));
   }
 
-  // ── Step 3: INSERT into Supabase (login_activity) ──────────────────────────
+  // ── Step 3: INSERT into login_events (unified table) ───────────────────────
   let dbRecord  = null;
   let dbSuccess = false;
 
   try {
     const { data: row, error } = await supabase
-      .from('login_activity')
+      .from('login_events')
       .insert([{
-        user_id:    user_id.trim()                    || 'unknown',
-        ip_address: ip_address.trim()                 || 'unknown',
-        city:       (city      || 'unknown').trim(),
-        region:     (region    || 'unknown').trim(),
-        country:    (country   || 'unknown').trim(),
-        latitude:   latitude  != null ? Number(latitude)  : null,
-        longitude:  longitude != null ? Number(longitude) : null,
-        timezone:   (timezone  || 'unknown').trim(),
-        device_info: device_info.trim()               || 'unknown',
-        status,
+        user_id:         user_id.trim()                    || 'unknown',
+        ip_address:      ip_address.trim()                 || 'unknown',
+        city:            (city      || 'unknown').trim(),
+        region:          (region    || 'unknown').trim(),
+        country:         (country   || 'unknown').trim(),
+        latitude:        latitude  != null ? Number(latitude)  : null,
+        longitude:       longitude != null ? Number(longitude) : null,
+        timezone:        (timezone  || 'unknown').trim(),
+        device_info:     device_info.trim()               || 'unknown',
+        status:          'SUCCESS',
+        anomaly_status:  anomalyStatus,
+        anomaly_reasons: reasons.join(' | '),
+        source:          'express',
       }])
       .select('*')
       .single();
@@ -127,11 +132,10 @@ router.post('/', async (req, res) => {
     console.log(
       `[LOG-LOGIN] ✅ DB INSERT SUCCESS — id:${dbRecord.id} | user:${user_id} | ` +
       `ip:${ip_address} | ${city}, ${region}, ${country} | ` +
-      `status:${dbRecord.status} | ${dbRecord.created_at}`
+      `anomaly:${dbRecord.anomaly_status} | ${dbRecord.created_at}`
     );
   } catch (err) {
     console.error('[LOG-LOGIN] ❌ DB INSERT FAILED:', err.message);
-    // DB failed → do NOT send email → return immediately
     return res.status(200).json({
       success:     false,
       db_inserted: false,
@@ -160,7 +164,6 @@ router.post('/', async (req, res) => {
     emailSent = true;
   } catch (err) {
     console.error('[LOG-LOGIN] 📧 EMAIL FAILED (non-fatal):', err.message);
-    // Email failure is non-fatal — DB record is safe
   }
 
   // ── Step 5: Return full verification response ─────────────────────────────
@@ -172,14 +175,15 @@ router.post('/', async (req, res) => {
       ? 'Login logged + email sent'
       : 'Login logged (email not sent)',
     db_record: {
-      id:         dbRecord.id,
-      user_id:    dbRecord.user_id,
-      ip_address: dbRecord.ip_address,
-      city:       dbRecord.city,
-      region:     dbRecord.region,
-      country:    dbRecord.country,
-      status:     dbRecord.status,
-      created_at: dbRecord.created_at,
+      id:             dbRecord.id,
+      user_id:        dbRecord.user_id,
+      ip_address:     dbRecord.ip_address,
+      city:           dbRecord.city,
+      region:         dbRecord.region,
+      country:        dbRecord.country,
+      anomaly_status: dbRecord.anomaly_status,
+      status:         dbRecord.status,
+      created_at:     dbRecord.created_at,
     },
   });
 });

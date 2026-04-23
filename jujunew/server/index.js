@@ -6,7 +6,7 @@ import unlockRouter    from './routes/logUnlock.js';  // server-side geo
 import logLoginRouter  from './routes/logLogin.js';   // frontend-fed data
 import authRouter      from './routes/auth.js';        // true login controller
 import trackUserRouter from './routes/trackUser.js';   // IP-based user tracking
-import { trackUserRateLimiter } from './middleware/rateLimiter.js';
+import { trackUserRateLimiter, loginRateLimiter } from './middleware/rateLimiter.js';
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -27,7 +27,7 @@ app.use(express.json());
 // ── Routes ────────────────────────────────────────────────────────────────
 app.use('/api/unlock',     unlockRouter);                          // server-side geo (backup route)
 app.use('/api/log-login',  logLoginRouter);                        // PRIMARY: frontend sends all data
-app.use('/api/auth',       authRouter);                            // LOGIN CONTROLLER
+app.use('/api/auth',       loginRateLimiter, authRouter);           // LOGIN CONTROLLER (rate-limited)
 app.use('/api/track-user', trackUserRateLimiter, trackUserRouter); // IP metadata tracker (rate-limited)
 
 // Health check

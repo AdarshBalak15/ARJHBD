@@ -27,67 +27,27 @@ async function checkUsers() {
     });
   }
 
-  // 2. Login Activity (from /api/log-login and /api/unlock)
-  const { data: logins } = await sb
-    .from('login_activity')
+  // 2. Login Events (unified — replaces login_activity, login_attempts, login_logs)
+  const { data: events } = await sb
+    .from('login_events')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(20);
+    .limit(30);
 
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('🔓 LOGIN ACTIVITY (' + (logins?.length || 0) + ' records)');
+  console.log('🔐 LOGIN EVENTS (' + (events?.length || 0) + ' records)');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  if (!logins?.length) {
+  if (!events?.length) {
     console.log('  (empty)\n');
   } else {
-    logins.forEach(r => {
-      console.log(`  #${r.id} | User: ${r.user_id} | IP: ${r.ip_address}`);
-      console.log(`       | ${r.city}, ${r.region}, ${r.country} | Status: ${r.status}`);
-      console.log(`       | ${r.created_at}`);
-      console.log('');
-    });
-  }
-
-  // 3. Login Attempts (from /api/auth)
-  const { data: attempts } = await sb
-    .from('login_attempts')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(20);
-
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('🔐 LOGIN ATTEMPTS (' + (attempts?.length || 0) + ' records)');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  if (!attempts?.length) {
-    console.log('  (empty)\n');
-  } else {
-    attempts.forEach(r => {
+    events.forEach(r => {
       const icon = r.status === 'SUCCESS' ? '✅' : '❌';
-      console.log(`  ${icon} #${r.id} | User: ${r.user_id} | IP: ${r.ip_address}`);
-      console.log(`       | ${r.city}, ${r.region}, ${r.country} | ${r.status}`);
-      console.log(`       | ${r.created_at}`);
-      console.log('');
-    });
-  }
-
-  // 4. Login Logs (from Netlify function)
-  const { data: logs } = await sb
-    .from('login_logs')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(20);
-
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('📋 LOGIN LOGS - Netlify (' + (logs?.length || 0) + ' records)');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  if (!logs?.length) {
-    console.log('  (empty)\n');
-  } else {
-    logs.forEach(r => {
-      const icon = r.status === 'SUCCESS' ? '✅' : '❌';
-      console.log(`  ${icon} #${r.id} | User: ${r.user_id} | IP: ${r.ip_address}`);
-      console.log(`       | ${r.city}, ${r.region}, ${r.country} | ${r.status}`);
-      console.log(`       | Device: ${(r.device_info || '').slice(0, 80)}`);
+      const anomaly = r.anomaly_status === 'suspicious' ? ' 🚨 SUSPICIOUS' : '';
+      console.log(`  ${icon} #${r.id} | User: ${r.user_id} | IP: ${r.ip_address} | Source: ${r.source}`);
+      console.log(`       | ${r.city}, ${r.region}, ${r.country} | ${r.status}${anomaly}`);
+      if (r.anomaly_reasons) {
+        console.log(`       | Anomaly: ${r.anomaly_reasons}`);
+      }
       console.log(`       | ${r.created_at}`);
       console.log('');
     });

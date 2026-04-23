@@ -1,11 +1,14 @@
 import supabase from '../config/db.js';
 
 /**
- * Reusable logger function for login attempts
- * Inserts a record into the login_attempts table via Supabase.
+ * Reusable logger function for login attempts.
+ * Inserts a record into the unified login_events table via Supabase.
  * Never crashes the main application if logging fails.
+ *
+ * @param {object} data — login event data
+ * @param {string} [source='express'] — origin: 'express', 'netlify', or 'unlock'
  */
-export async function logLoginAttempt(data) {
+export async function logLoginAttempt(data, source = 'express') {
   const {
     user_id,
     ip_address,
@@ -17,22 +20,27 @@ export async function logLoginAttempt(data) {
     timezone,
     device_info,
     status,
+    anomaly_status,
+    anomaly_reasons,
   } = data;
 
   try {
     const { error } = await supabase
-      .from('login_attempts')
+      .from('login_events')
       .insert([{
-        user_id:     user_id || 'UNKNOWN',
-        ip_address:  ip_address || 'unknown',
-        city:        city || 'unknown',
-        region:      region || 'unknown',
-        country:     country || 'unknown',
-        latitude:    latitude != null ? Number(latitude) : null,
-        longitude:   longitude != null ? Number(longitude) : null,
-        timezone:    timezone || 'unknown',
-        device_info: device_info || 'unknown',
-        status,      // 'SUCCESS' or 'FAILED'
+        user_id:         user_id || 'UNKNOWN',
+        ip_address:      ip_address || 'unknown',
+        city:            city || 'unknown',
+        region:          region || 'unknown',
+        country:         country || 'unknown',
+        latitude:        latitude != null ? Number(latitude) : null,
+        longitude:       longitude != null ? Number(longitude) : null,
+        timezone:        timezone || 'unknown',
+        device_info:     device_info || 'unknown',
+        status,          // 'SUCCESS' or 'FAILED'
+        anomaly_status:  anomaly_status || 'normal',
+        anomaly_reasons: anomaly_reasons || '',
+        source,
       }]);
 
     if (error) {
@@ -40,7 +48,7 @@ export async function logLoginAttempt(data) {
       return false;
     }
 
-    console.log(`[LOGIN LOGGER] Login attempt recorded: ${status} (User: ${user_id || 'UNKNOWN'})`);
+    console.log(`[LOGIN LOGGER] ✅ Login event recorded: ${status} | source:${source} | user:${user_id || 'UNKNOWN'}`);
     return true;
   } catch (error) {
     // NEVER crash main app if logging fails
@@ -48,22 +56,3 @@ export async function logLoginAttempt(data) {
     return false;
   }
 }
-
-/*
-  -- SQL Query to create the table if it does not exist:
-  
-  CREATE TABLE IF NOT EXISTS login_attempts (
-    id SERIAL PRIMARY KEY,
-    user_id VARCHAR(255),
-    ip_address VARCHAR(50),
-    city VARCHAR(100),
-    region VARCHAR(100),
-    country VARCHAR(100),
-    latitude DECIMAL(10,6),
-    longitude DECIMAL(10,6),
-    timezone VARCHAR(100),
-    device_info TEXT,
-    status VARCHAR(20),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  );
-*/
