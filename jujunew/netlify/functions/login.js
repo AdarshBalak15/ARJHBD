@@ -1,6 +1,7 @@
 const { createClient } = require("@supabase/supabase-js");
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
+const { formatTime } = require("./utils/formatTime.cjs");
 
 /**
  * Netlify Function: login
@@ -47,7 +48,7 @@ async function sendFailedLoginEmail({ ip, city, region, country, latitude, longi
       tls: { rejectUnauthorized: false },
     });
 
-    const timeStr = new Date(timestamp).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    const timeStr = formatTime(timestamp, timezone !== 'unknown' ? timezone : 'Asia/Kolkata', { preset: 'full' });
     const hasCoords = latitude != null && longitude != null;
     const mapsLink = hasCoords ? `https://www.google.com/maps?q=${latitude},${longitude}` : null;
     const mapsRow = mapsLink

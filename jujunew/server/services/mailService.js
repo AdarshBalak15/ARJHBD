@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import nodemailer from 'nodemailer';
+import { formatTime } from '../utils/formatTime.js';
 
 // Configure Nodemailer transporter using SMTP credentials
 const transporter = nodemailer.createTransport({
@@ -44,7 +45,7 @@ Location: ${city || 'unknown'}, ${region || 'unknown'}, ${country || 'unknown'}
 Coordinates: ${latitude ?? 'unknown'}, ${longitude ?? 'unknown'}
 Timezone: ${timezone || 'unknown'}
 Device: ${device_info || 'unknown'}
-Time: ${created_at || new Date().toISOString()}
+Time: ${formatTime(created_at || new Date(), (timezone && timezone !== 'unknown') ? timezone : 'Asia/Kolkata', { preset: 'full' })}
 `.trim();
 
   try {

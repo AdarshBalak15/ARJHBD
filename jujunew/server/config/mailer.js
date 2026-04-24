@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import nodemailer from 'nodemailer';
+import { formatTime } from '../utils/formatTime.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Email alert system — sends login notifications via Gmail SMTP.
@@ -74,9 +75,8 @@ export async function sendLoginAlert({
        </tr>`
     : '';
 
-  const timeStr = timestamp
-    ? new Date(timestamp).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
-    : new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+  const tz = (timezone && timezone !== 'unknown') ? timezone : 'Asia/Kolkata';
+  const timeStr = formatTime(timestamp || new Date(), tz, { preset: 'full' });
 
   const html = `
     <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:540px;margin:0 auto;
