@@ -289,13 +289,14 @@ const MemoryRow = ({ memory, index, active }) => {
           {/* Date */}
           <div
             style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: '0.8rem',
-              fontWeight: 600,
+              fontFamily: "'Inter', 'Poppins', sans-serif",
+              fontSize: '0.75rem',
+              fontWeight: 500,
               color: '#4ade80',
               textTransform: 'uppercase',
-              letterSpacing: '0.2em',
-              marginBottom: '0.6rem',
+              letterSpacing: '0.25em',
+              marginBottom: '0.7rem',
+              opacity: 0.85,
               position: 'relative',
               zIndex: 1,
             }}
@@ -306,14 +307,15 @@ const MemoryRow = ({ memory, index, active }) => {
           {/* Title */}
           <h3
             style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: 'clamp(1.25rem, 3vw, 1.7rem)',
+              fontFamily: "'Playfair Display', 'Georgia', serif",
+              fontSize: 'clamp(1.3rem, 3vw, 1.75rem)',
               fontWeight: 700,
               color: '#fff',
-              marginBottom: '0.8rem',
+              marginBottom: '0.9rem',
               position: 'relative',
               zIndex: 1,
-              lineHeight: 1.3,
+              lineHeight: 1.25,
+              letterSpacing: '0.02em',
             }}
           >
             {memory.title}
@@ -322,10 +324,11 @@ const MemoryRow = ({ memory, index, active }) => {
           {/* Description */}
           <p
             style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: 'clamp(0.85rem, 1.8vw, 1rem)',
-              color: 'rgba(245,247,250,0.75)',
-              lineHeight: 1.85,
+              fontFamily: "'Cormorant Garamond', 'Georgia', serif",
+              fontSize: 'clamp(0.95rem, 1.8vw, 1.1rem)',
+              color: 'rgba(245,247,250,0.88)',
+              lineHeight: 1.8,
+              letterSpacing: '0.015em',
               position: 'relative',
               zIndex: 1,
             }}
@@ -457,7 +460,7 @@ function MemoryTimeline() {
           transition={{ duration: 1 }}
           className="text-gradient"
           style={{
-            fontFamily: "'Poppins', sans-serif",
+            fontFamily: "'Playfair Display', 'Georgia', serif",
             fontSize: 'clamp(2.5rem, 7vw, 3.5rem)',
             fontWeight: 800,
             textAlign: 'center',

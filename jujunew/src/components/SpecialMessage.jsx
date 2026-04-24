@@ -442,8 +442,8 @@ function TypedMessage({ show }) {
       <span
         ref={typedRef}
         style={{
-          fontFamily: "'Poppins', sans-serif",
-          fontSize: 'clamp(1rem, 2.5vw, 1.3rem)',
+          fontFamily: "'Cormorant Garamond', 'Georgia', serif",
+          fontSize: 'clamp(1.05rem, 2.5vw, 1.35rem)',
           color: '#C8A2C8',
           lineHeight: 2,
           fontWeight: 400,
@@ -505,9 +505,10 @@ function LetterCard({ show, onClose }) {
         transition={{ delay: 0.3, duration: 0.8 }}
         className="text-gradient"
         style={{
-          fontFamily: "'Poppins', sans-serif",
+          fontFamily: "'Playfair Display', 'Georgia', serif",
           fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
-          fontWeight: 800,
+          fontWeight: 600,
+          letterSpacing: '0.03em',
           marginBottom: '1.2rem',
           position: 'relative',
           zIndex: 1,
@@ -529,10 +530,10 @@ function LetterCard({ show, onClose }) {
             transition={{ delay: item.delay, duration: 0.8 }}
             className="subtext"
             style={{
-              fontFamily: "'Poppins', sans-serif",
-              fontSize: 'clamp(0.9rem, 1.8vw, 1.05rem)',
+              fontFamily: "'Cormorant Garamond', 'Georgia', serif",
+              fontSize: 'clamp(0.95rem, 1.8vw, 1.12rem)',
               fontWeight: 400,
-              lineHeight: 1.75,
+              lineHeight: 1.8,
               marginBottom: '1rem',
               color: 'rgba(255, 255, 255, 0.95)',
             }}
@@ -546,9 +547,9 @@ function LetterCard({ show, onClose }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.85, duration: 0.8 }}
           style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: 'clamp(1rem, 2.2vw, 1.2rem)',
-            fontWeight: 700,
+            fontFamily: "'Cormorant Garamond', 'Georgia', serif",
+            fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
+            fontWeight: 500,
             color: '#C8A2C8',
             marginTop: '1.5rem',
             fontStyle: 'italic',

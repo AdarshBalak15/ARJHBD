@@ -55,9 +55,9 @@ export default function Hero() {
             duration: 1.2,
             ease: [0.22, 1, 0.36, 1]
           }}
-          className="text-gradient hero-title"
+          className="text-gradient hero-title hero-glow-pulse"
           style={{
-            fontFamily: "'Poppins', sans-serif",
+            fontFamily: "'Cinzel Decorative', 'Playfair Display', serif",
             marginBottom: '1rem',
           }}
         >
@@ -72,11 +72,12 @@ export default function Hero() {
         transition={{ duration: 1, delay: 1.5 }}
         className="subtext hero-subtext"
         style={{
-          fontFamily: "'Poppins', sans-serif",
+          fontFamily: "'Inter', 'Poppins', sans-serif",
           fontSize: 'clamp(1rem, 3.5vw, 1.6rem)',
-          fontWeight: 400,
+          fontWeight: 300,
           minHeight: '3rem',
           maxWidth: '800px',
+          letterSpacing: '0.02em',
         }}
       >
         <span ref={typedRef}></span>

@@ -61,9 +61,10 @@ const keyframes = `
   padding: 0 12px;
   box-sizing: border-box;
   color: #333;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: 500;
-  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Caveat', 'Dancing Script', cursive;
+  letter-spacing: 0.02em;
   text-align: center;
   opacity: 0;
   animation: captionFadeIn 0.8s ease-out forwards;
@@ -99,8 +100,9 @@ const keyframes = `
     box-shadow: 0 25px 45px rgba(0,0,0,0.3) !important;
   }
   .hanging-timeline .caption {
-    font-size: 17px !important;
-    letter-spacing: 0.5px !important;
+    font-size: 19px !important;
+    font-family: 'Caveat', 'Dancing Script', cursive !important;
+    letter-spacing: 0.03em !important;
   }
 }
 `
@@ -228,7 +230,7 @@ export default function HangingTimeline() {
                     viewport={{ once: true, margin: '-50px' }}
                     transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
                     style={{
-                        fontFamily: "'Poppins', sans-serif",
+                        fontFamily: "'Playfair Display', 'Georgia', serif",
                         fontSize: 'clamp(1.1rem, 2vw, 2rem)',
                         fontWeight: 700,
                         textAlign: 'center',

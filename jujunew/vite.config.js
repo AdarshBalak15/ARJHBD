@@ -67,18 +67,26 @@ export default defineConfig({
     // Target modern browsers for smaller output
     target: 'es2020',
   },
-  // Proxy during local dev
+  // Proxy during local dev — requires `npm run server:dev` on port 3001
   server: {
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
+        secure: false,
       },
       // Proxy Netlify function calls to Express during local dev
       '/.netlify/functions/login': {
         target: 'http://localhost:3001',
         changeOrigin: true,
+        secure: false,
         rewrite: (path) => '/api/auth/login',
+      },
+      '/.netlify/functions/track': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => '/api/track-user',
       },
     },
   },

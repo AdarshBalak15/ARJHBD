@@ -120,12 +120,12 @@ function Questionnaire({ onComplete }) {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
               style={{
-                fontFamily: "'Poppins', sans-serif",
-                fontSize: '0.85rem',
-                fontWeight: 700,
+                fontFamily: "'Inter', 'Poppins', sans-serif",
+                fontSize: '0.82rem',
+                fontWeight: 400,
                 color: '#C8A2C8',
                 textTransform: 'uppercase',
-                letterSpacing: '0.25em',
+                letterSpacing: '0.3em',
                 marginBottom: '2rem',
                 opacity: 0.9,
               }}
@@ -171,10 +171,11 @@ function Questionnaire({ onComplete }) {
                 whileHover={{ scale: 1.05, background: '#C77DFF', boxShadow: '0 0 25px rgba(157, 78, 221, 0.7)' }}
                 whileTap={{ scale: 0.95 }}
                 style={{
-                  fontFamily: "'Poppins', sans-serif",
+                  fontFamily: "'Inter', 'Poppins', sans-serif",
                   fontSize: 'clamp(1.1rem, 2.5vw, 1.25rem)',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: '#fff',
+                  letterSpacing: '0.06em',
                   background: '#9D4EDD',
                   border: 'none',
                   borderRadius: '12px',
@@ -212,9 +213,10 @@ function Questionnaire({ onComplete }) {
                 whileHover={!isNoDisabled ? { scale: 1.03, background: 'rgba(255, 255, 255, 0.1)' } : {}}
                 whileTap={!isNoDisabled ? { scale: 0.95 } : {}}
                 style={{
-                  fontFamily: "'Poppins', sans-serif",
+                  fontFamily: "'Inter', 'Poppins', sans-serif",
                   fontSize: 'clamp(1rem, 2vw, 1.15rem)',
-                  fontWeight: 700,
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
                   color: isNoDisabled ? '#E0B0FF' : 'rgba(255, 255, 255, 0.9)',
                   background: isNoDisabled ? 'rgba(157, 78, 221, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                   border: isNoDisabled ? '1px solid rgba(157, 78, 221, 0.4)' : '1px solid rgba(255, 255, 255, 0.2)',
@@ -268,9 +270,9 @@ function Questionnaire({ onComplete }) {
               transition={{ delay: 0.4, duration: 0.8 }}
               className="text-gradient"
               style={{
-                fontFamily: "'Poppins', sans-serif",
+                fontFamily: "'Playfair Display', 'Georgia', serif",
                 fontSize: 'clamp(2rem, 6vw, 3.5rem)',
-                fontWeight: 800,
+                fontWeight: 700,
                 textShadow: '0 0 30px rgba(200, 162, 200, 0.4)',
               }}
             >
@@ -282,9 +284,9 @@ function Questionnaire({ onComplete }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.6 }}
               style={{
-                fontFamily: "'Poppins', sans-serif",
+                fontFamily: "'Inter', 'Poppins', sans-serif",
                 fontSize: 'clamp(1.2rem, 3vw, 1.5rem)',
-                fontWeight: 500,
+                fontWeight: 400,
                 color: '#EAEAEA',
                 marginTop: '2rem',
                 opacity: 0.9,
