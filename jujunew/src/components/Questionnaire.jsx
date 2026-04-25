@@ -79,7 +79,7 @@ function Questionnaire({ onComplete }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '2rem',
+        padding: '32px',
         position: 'relative',
         zIndex: 1,
         width: '100%',
@@ -88,7 +88,7 @@ function Questionnaire({ onComplete }) {
         @media (max-width: 768px) {
           .questionnaire-container {
             min-height: auto !important;
-            padding: 3rem 1rem !important;
+            padding: 48px 16px !important;
           }
         }
       `}</style>
@@ -108,7 +108,7 @@ function Questionnaire({ onComplete }) {
               backdropFilter: 'blur(15px)',
               border: '1px solid rgba(255, 255, 255, 0.2)',
               borderRadius: '24px',
-              padding: 'clamp(2.5rem, 6vw, 4rem)',
+              padding: 'clamp(48px, 6vw, 64px)',
               boxShadow: '0 25px 50px rgba(142, 45, 226, 0.3)',
               textAlign: 'center',
               position: 'relative',
@@ -126,7 +126,7 @@ function Questionnaire({ onComplete }) {
                 color: '#C8A2C8',
                 textTransform: 'uppercase',
                 letterSpacing: '0.3em',
-                marginBottom: '2rem',
+                marginBottom: '32px',
                 opacity: 0.9,
               }}
             >
@@ -143,7 +143,7 @@ function Questionnaire({ onComplete }) {
                 fontWeight: 600,
                 color: '#fff',
                 lineHeight: 1.5,
-                marginBottom: '3rem',
+                marginBottom: '48px',
                 textShadow: '0 2px 10px rgba(0,0,0,0.2)',
                 minHeight: '80px', // Prevent height jumping internally
                 display: 'flex',
@@ -288,7 +288,7 @@ function Questionnaire({ onComplete }) {
                 fontSize: 'clamp(1.2rem, 3vw, 1.5rem)',
                 fontWeight: 400,
                 color: '#EAEAEA',
-                marginTop: '2rem',
+                marginTop: '32px',
                 opacity: 0.9,
               }}
             >

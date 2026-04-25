@@ -135,7 +135,7 @@ const MemoryRow = ({ memory, index, active }) => {
         style={{
           display: 'flex',
           justifyContent: 'flex-end',
-          paddingRight: 'clamp(16px, 3vw, 40px)',
+          paddingRight: 'clamp(16px, 3vw, 48px)',
         }}
       >
         <motion.div
@@ -235,7 +235,7 @@ const MemoryRow = ({ memory, index, active }) => {
         viewport={{ once: true, margin: '-80px' }}
         transition={{ duration: 0.9, delay: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
         style={{
-          paddingLeft: 'clamp(16px, 3vw, 50px)',
+          paddingLeft: 'clamp(16px, 3vw, 48px)',
         }}
       >
         <motion.div
@@ -250,7 +250,7 @@ const MemoryRow = ({ memory, index, active }) => {
             background: 'linear-gradient(135deg, #1B4332, #142850)',
             border: '1px solid rgba(34,197,94,0.15)',
             borderRadius: '20px',
-            padding: 'clamp(1.5rem, 3.5vw, 2.5rem)',
+            padding: 'clamp(24px, 3.5vw, 48px)',
             maxWidth: '420px',
             boxShadow:
               '0 6px 30px rgba(27,67,50,0.3), 0 0 50px rgba(31,175,109,0.06)',
@@ -295,7 +295,7 @@ const MemoryRow = ({ memory, index, active }) => {
               color: '#4ade80',
               textTransform: 'uppercase',
               letterSpacing: '0.25em',
-              marginBottom: '0.7rem',
+              marginBottom: '12px',
               opacity: 0.85,
               position: 'relative',
               zIndex: 1,
@@ -311,7 +311,7 @@ const MemoryRow = ({ memory, index, active }) => {
               fontSize: 'clamp(1.3rem, 3vw, 1.75rem)',
               fontWeight: 700,
               color: '#fff',
-              marginBottom: '0.9rem',
+              marginBottom: '16px',
               position: 'relative',
               zIndex: 1,
               lineHeight: 1.25,
@@ -545,8 +545,8 @@ function MemoryTimeline() {
            ═══════════════════════════════════════════════════ */
         @media (min-width: 768px) and (max-width: 1024px) {
           .memories-container {
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
+            padding-left: 16px !important;
+            padding-right: 16px !important;
           }
 
           /* Slightly narrower container for tablet proportions */
@@ -557,7 +557,7 @@ function MemoryTimeline() {
           /* Keep the SAME 3-column alternating grid as desktop */
           .memory-row {
             grid-template-columns: 1fr 48px 1fr !important;
-            margin-bottom: 60px !important;
+            margin-bottom: 64px !important;
           }
 
           /* Constrain image width for tablet */
@@ -567,7 +567,7 @@ function MemoryTimeline() {
 
           /* Constrain card sizing for tablet */
           .memory-card {
-            padding: clamp(1.2rem, 2.5vw, 1.8rem) !important;
+            padding: clamp(16px, 2.5vw, 24px) !important;
             max-width: 360px !important;
           }
 
@@ -581,9 +581,9 @@ function MemoryTimeline() {
         @media (max-width: 767px) {
           .memories-container {
             min-height: auto !important;
-            padding-bottom: 2rem !important;
-            padding-left: 0.75rem !important;
-            padding-right: 0.75rem !important;
+            padding-bottom: 32px !important;
+            padding-left: 12px !important;
+            padding-right: 12px !important;
           }
 
           /* Constrain the ENTIRE timeline container so stem + rows align */
@@ -597,7 +597,7 @@ function MemoryTimeline() {
             grid-template-columns: 32px 1fr !important;
             grid-template-rows: auto auto !important;
             gap: 0 !important;
-            margin-bottom: 2.5rem !important;
+            margin-bottom: 40px !important;
           }
           .memory-row:last-child {
             margin-bottom: 0 !important;
@@ -610,7 +610,7 @@ function MemoryTimeline() {
             display: flex !important;
             justify-content: center !important;
             align-items: flex-start !important;
-            padding-top: 0.8rem !important;
+            padding-top: 12px !important;
           }
 
           /* Image: column 2, row 1 */
@@ -627,7 +627,7 @@ function MemoryTimeline() {
             grid-column: 2 !important;
             grid-row: 2 !important;
             padding-left: 12px !important;
-            padding-top: 0.8rem !important;
+            padding-top: 12px !important;
           }
 
           /* Constrain image for mobile */

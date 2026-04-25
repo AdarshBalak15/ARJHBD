@@ -234,13 +234,13 @@ function App() {
                 position: relative;
               }
               .column-left {
-                width: 25%;
+                width: 30%;
                 min-width: 320px;
                 background: linear-gradient(180deg, #021a16 0%, #064e3b 50%, #065f46 100%);
                 position: relative;
               }
               .column-right {
-                width: 75%;
+                width: 70%;
                 flex-grow: 1;
                 position: relative;
                 overflow: hidden;

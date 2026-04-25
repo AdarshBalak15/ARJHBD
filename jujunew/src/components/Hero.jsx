@@ -44,7 +44,7 @@ export default function Hero() {
         alignItems: 'center',
         justifyContent: 'center',
         textAlign: 'center',
-        padding: '2rem',
+        padding: '32px',
       }}
     >
       <div className="hero-title-container">
@@ -58,7 +58,7 @@ export default function Hero() {
           className="text-gradient hero-title hero-glow-pulse"
           style={{
             fontFamily: "'Cinzel Decorative', 'Playfair Display', serif",
-            marginBottom: '1rem',
+            marginBottom: '16px',
           }}
         >
           <span className="hero-title-line">Happy Birthday</span>{' '}

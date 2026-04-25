@@ -274,7 +274,7 @@ function CountdownTimer() {
     background: 'rgba(255, 255, 255, 0.05)',
     border: '1px solid rgba(200, 162, 200, 0.3)',
     borderRadius: '20px',
-    padding: 'clamp(1.5rem, 4vw, 2rem) 0.5rem',
+    padding: 'clamp(24px, 4vw, 32px) 8px',
     textAlign: 'center',
     width: 'clamp(140px, 40vw, 170px)',
     boxShadow: 'inset 0 0 15px rgba(200, 162, 200, 0.05)',
@@ -299,7 +299,7 @@ function CountdownTimer() {
     fontSize: 'clamp(0.7rem, 2vw, 0.95rem)',
     fontWeight: 500,
     color: '#EAEAEA',
-    marginTop: '0.75rem',
+    marginTop: '12px',
     textTransform: 'uppercase',
     letterSpacing: '0.25em',
     opacity: 0.8,
@@ -329,10 +329,10 @@ function CountdownTimer() {
             transition={{ duration: 0.6, ease: 'easeInOut' }}
             style={{
               display: 'flex',
-              gap: 'clamp(0.75rem, 3vw, 2rem)',
+              gap: 'clamp(12px, 3vw, 32px)',
               justifyContent: 'center',
               flexWrap: 'wrap',
-              marginTop: '3.5rem',
+              marginTop: '48px',
             }}
           >
             {timeUnits.map((unit, index) => (
@@ -359,11 +359,11 @@ function CountdownTimer() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
             style={{
-              marginTop: '3.5rem',
+              marginTop: '48px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '2rem',
+              gap: '32px',
               position: 'relative',
             }}
           >
@@ -400,7 +400,7 @@ function CountdownTimer() {
               transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
               style={{
                 display: 'flex',
-                gap: 'clamp(0.5rem, 2vw, 1.2rem)',
+                gap: 'clamp(8px, 2vw, 16px)',
                 justifyContent: 'center',
                 flexWrap: 'wrap',
                 position: 'relative',
@@ -420,7 +420,7 @@ function CountdownTimer() {
                   style={{
                     ...cardStyle,
                     width: 'clamp(90px, 28vw, 120px)',
-                    padding: 'clamp(1rem, 3vw, 1.4rem) 0.25rem',
+                    padding: 'clamp(16px, 3vw, 24px) 4px',
                     boxShadow:
                       'inset 0 0 15px rgba(200, 162, 200, 0.05), 0 0 20px rgba(200,162,200,0.08)',
                   }}

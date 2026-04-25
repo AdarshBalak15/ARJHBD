@@ -151,7 +151,7 @@ function AudioToggle() {
         /* ── Tooltip — glass style ── */
         .audio-toggle-tooltip {
           position: absolute;
-          bottom: calc(100% + 10px);
+          bottom: calc(100% + 8px);
           left: 50%;
           transform: translateX(-50%);
           white-space: nowrap;
@@ -165,7 +165,7 @@ function AudioToggle() {
           -webkit-backdrop-filter: blur(12px);
           border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: 8px;
-          padding: 5px 10px;
+          padding: 4px 8px;
           pointer-events: none;
           opacity: 0;
           transition: opacity 0.2s ease, transform 0.2s ease;

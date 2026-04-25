@@ -1,4 +1,21 @@
 :root {
+  /* ── Unified Spacing Scale (8px grid) ──────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+  --space-7: 64px;
+
+  /* ── Section / Component / Element spacing tokens ─────── */
+  --section-gap: var(--space-7);       /* 64px between major sections */
+  --component-gap: var(--space-5);     /* 32px between components */
+  --element-gap: var(--space-3);       /* 16px between sibling elements */
+  --inner-pad: var(--space-4);         /* 24px inner padding */
+  --container-pad-x: var(--space-3);   /* 16px horizontal container padding */
+
+  /* ── Color Palette ────────────────────────────────────── */
   --bg-blue: #142850;
   --card-gradient: linear-gradient(145deg, #1E3A8A, #8E2DE2);
   --lavender: #C8A2C8;
@@ -349,7 +366,7 @@ a, button, [role="button"], input, textarea, select, label {
     -webkit-backdrop-filter: none !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 10px 0 !important;
+    padding: var(--space-2) 0 !important;
     
     /* Shift text vertically to avoid transition midpoint conflict */
     transform: translateY(20px) !important;
@@ -431,7 +448,7 @@ a, button, [role="button"], input, textarea, select, label {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 10px;
+  margin-top: var(--space-2);
 }
 
 .gap-image .photo-card {
@@ -507,7 +524,7 @@ a, button, [role="button"], input, textarea, select, label {
      depth and a premium atmospheric feel on mobile. */
   #hero {
     position: relative;
-    padding: 1.5rem 1rem !important;
+    padding: var(--space-4) var(--space-3) !important;
   }
 
   #hero::before {
@@ -542,12 +559,12 @@ a, button, [role="button"], input, textarea, select, label {
     align-items: center !important;
     text-align: center !important;
     line-height: 1.3 !important;
-    gap: 8px;
-    margin-bottom: 1.5rem !important;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4) !important;
     position: relative;
     z-index: 1;
     overflow: hidden;
-    padding: 0 16px;
+    padding: 0 var(--space-3);
   }
 
   .hero-title-line {
@@ -565,7 +582,7 @@ a, button, [role="button"], input, textarea, select, label {
     font-size: clamp(38px, 11vw, 64px) !important;
     font-weight: 900 !important;
     letter-spacing: 0.1em !important;
-    margin-top: 4px;
+    margin-top: var(--space-1);
     background: linear-gradient(
       135deg,
       #d8b4fe 0%,
@@ -587,7 +604,7 @@ a, button, [role="button"], input, textarea, select, label {
   .hero-subtext {
     position: relative;
     z-index: 1;
-    margin-bottom: 0.5rem !important;
+    margin-bottom: var(--space-2) !important;
   }
 
   .hero-subtext .typed-cursor {
@@ -606,11 +623,11 @@ a, button, [role="button"], input, textarea, select, label {
   .countdown-container {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 14px !important;
-    padding: 0 20px !important;
+    gap: var(--space-3) !important;
+    padding: 0 var(--space-4) !important;
     justify-items: center;
     align-items: center;
-    margin-top: 2rem !important;
+    margin-top: var(--space-5) !important;
     position: relative;
     z-index: 1;
   }
@@ -639,7 +656,7 @@ a, button, [role="button"], input, textarea, select, label {
       0 8px 25px rgba(0, 0, 0, 0.3),
       inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
 
-    padding: 1rem !important;
+    padding: var(--space-3) !important;
     transition: transform 0.2s ease;
   }
 
@@ -663,7 +680,7 @@ a, button, [role="button"], input, textarea, select, label {
     letter-spacing: 0.2em !important;
     text-transform: uppercase !important;
     opacity: 0.75 !important;
-    margin-top: 0.6rem !important;
+    margin-top: 8px !important;
     font-weight: 500 !important;
     color: rgba(255, 255, 255, 0.85) !important;
   }
@@ -712,12 +729,12 @@ a, button, [role="button"], input, textarea, select, label {
   .countdown-container {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 18px !important;
+    gap: var(--space-3) !important;
     justify-content: center !important;
     align-items: center !important;
     max-width: 350px !important;
     margin: 0 auto !important;
-    margin-top: 2rem !important;
+    margin-top: var(--space-5) !important;
   }
 
   .countdown-box {
@@ -736,6 +753,6 @@ a, button, [role="button"], input, textarea, select, label {
   }
 
   #hero {
-    padding-bottom: 40px !important;
+    padding-bottom: var(--space-6) !important;
   }
 }

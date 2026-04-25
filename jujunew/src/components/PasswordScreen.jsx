@@ -80,7 +80,7 @@ function PasswordScreen({ onUnlock }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          paddingBottom: '1rem',
+          paddingBottom: '16px',
         }}
       >
         {/* ── Glassmorphism Card ── */}
@@ -90,7 +90,7 @@ function PasswordScreen({ onUnlock }) {
           transition={{ duration: 0.8, ease: "easeOut" }}
           style={{
             maxWidth: '420px',
-            width: 'calc(100% - 2rem)',
+            width: 'calc(100% - 32px)',
             textAlign: 'center',
             background: 'rgba(255, 255, 255, 0.06)',
             padding: 'clamp(2rem, 5vw, 3rem)',
@@ -112,7 +112,7 @@ function PasswordScreen({ onUnlock }) {
               fontSize: 'clamp(1.85rem, 5vw, 2.6rem)',
               fontWeight: 700,
               color: '#ffffff',
-              marginBottom: '0.4rem',
+              marginBottom: '8px',
               letterSpacing: '-0.02em',
             }}
           >
@@ -128,7 +128,7 @@ function PasswordScreen({ onUnlock }) {
               fontFamily: "'Poppins', sans-serif",
               fontSize: 'clamp(0.85rem, 2vw, 1rem)',
               color: 'rgba(255, 255, 255, 0.55)',
-              marginBottom: '2rem',
+              marginBottom: '32px',
               lineHeight: 1.5,
             }}
           >
@@ -141,7 +141,7 @@ function PasswordScreen({ onUnlock }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.6 }}
             onSubmit={handleUnlockFlow}
-            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
           >
             <div style={{ position: 'relative', width: '100%' }}>
               <motion.input
@@ -166,7 +166,7 @@ function PasswordScreen({ onUnlock }) {
                     ? '1px solid rgba(239, 68, 68, 0.7)'
                     : '1px solid rgba(255, 255, 255, 0.15)',
                   borderRadius: '14px',
-                  padding: '1rem 3rem 1rem 1.25rem',
+                  padding: '16px 48px 16px 24px',
                   outline: 'none',
                   transition: 'all 0.3s ease',
                   textAlign: 'center',
@@ -192,13 +192,13 @@ function PasswordScreen({ onUnlock }) {
                 onClick={() => setShowPassword(!showPassword)}
                 style={{
                   position: 'absolute',
-                  right: '1rem',
+                  right: '16px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   background: 'transparent',
                   border: 'none',
                   cursor: 'pointer',
-                  padding: '0.2rem',
+                  padding: '4px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -234,7 +234,7 @@ function PasswordScreen({ onUnlock }) {
                   fontFamily: "'Poppins', sans-serif",
                   fontSize: '0.82rem',
                   color: '#ff8a8a',
-                  marginTop: '-0.25rem',
+                  marginTop: '-4px',
                 }}
               >
                 Oops, try again.
@@ -257,10 +257,10 @@ function PasswordScreen({ onUnlock }) {
                 background: '#7c3aed',
                 border: 'none',
                 borderRadius: '14px',
-                padding: '1rem',
+                padding: '16px',
                 cursor: loading ? 'wait' : 'pointer',
                 transition: 'all 0.3s ease',
-                marginTop: '0.5rem',
+                marginTop: '8px',
                 boxShadow: '0 0 20px rgba(124, 58, 237, 0.35), 0 4px 12px rgba(0,0,0,0.25)',
                 letterSpacing: '0.04em',
                 opacity: loading ? 0.7 : 1,

@@ -169,7 +169,7 @@ export default function HangingTimeline() {
             width: '100%',
             height: '100%',
             overflow: 'hidden',
-            padding: '4rem 0',
+            padding: '64px 0',
         }}>
             <style>{keyframes}</style>
 
@@ -219,7 +219,7 @@ export default function HangingTimeline() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 height: '100%',
-                paddingBottom: '2rem',
+                paddingBottom: '32px',
             }}>
 
                 {/* ── Section Title ── */}
@@ -235,7 +235,7 @@ export default function HangingTimeline() {
                         fontWeight: 700,
                         textAlign: 'center',
                         whiteSpace: 'normal',
-                        marginBottom: 'clamp(2.5rem, 5vw, 4rem)',
+                        marginBottom: 'clamp(48px, 5vw, 64px)',
                         background: 'linear-gradient(90deg, #E6D6FF 0%, #D4BFFF 30%, #C8A2FF 55%, #7BEAD4 80%, #00F5D4 100%)',
                         WebkitBackgroundClip: 'text',
                         backgroundClip: 'text',
@@ -283,7 +283,7 @@ export default function HangingTimeline() {
                 <div className="cards-wrapper" style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '5rem',
+                    gap: '80px',
                     width: '100%',
                     alignItems: 'center',
                     position: 'relative',

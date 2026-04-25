@@ -727,8 +727,8 @@ const experienceStyles = `
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: clamp(30px, 5vw, 60px) auto;
-  padding: 0 1rem;
+  margin: clamp(32px, 5vw, 64px) auto;
+  padding: 0 16px;
   box-sizing: border-box;
   z-index: 5;
 }
@@ -755,7 +755,7 @@ const experienceStyles = `
   align-items: center;
   justify-content: center;
   min-height: 180px;
-  padding: 1.5rem 0;
+  padding: 24px 0;
   animation: teFadeIn 0.65s ease-out;
   position: relative;
 }
@@ -767,7 +767,7 @@ const experienceStyles = `
   font-weight: 700;
   color: #fff;
   text-align: center;
-  margin: 1rem 0 0;
+  margin: 16px 0 0;
   text-shadow: 0 2px 10px rgba(0,0,0,0.35);
   animation: teFadeIn 0.7s ease-out 0.25s both;
 }
@@ -785,7 +785,7 @@ const experienceStyles = `
   font-weight: 500;
   color: rgba(200,162,200,0.85);
   text-align: center;
-  margin-top: 0.4rem;
+  margin-top: 8px;
   font-style: italic;
   animation: teFadeIn 0.6s ease-out 0.3s both;
   text-shadow: 0 0 10px rgba(200,162,200,0.3);
@@ -795,9 +795,9 @@ const experienceStyles = `
 .te-banner {
   display: flex;
   justify-content: center;
-  gap: clamp(6px, 1.8vw, 14px);
+  gap: clamp(8px, 1.8vw, 16px);
   flex-wrap: wrap;
-  margin-bottom: 0.8rem;
+  margin-bottom: 12px;
 }
 .te-flag {
   width: 0; height: 0;
@@ -852,7 +852,7 @@ const experienceStyles = `
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1rem 0 0;
+  padding: 16px 0 0;
   animation: teFadeIn 0.8s ease-out;
 }
 
@@ -1140,7 +1140,7 @@ const experienceStyles = `
   height: 12px;
   background: radial-gradient(ellipse, rgba(0,0,0,0.22), transparent 70%);
   border-radius: 50%;
-  margin-top: 5px;
+  margin-top: 8px;
   animation: teShadowPulse 3.5s ease-in-out infinite;
 }
 
@@ -1158,7 +1158,7 @@ const experienceStyles = `
   font-weight: 600;
   color: #a855f7;
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
   text-shadow: 0 0 12px rgba(168,85,247,0.3);
   min-height: 2em;
   display: flex;
@@ -1280,7 +1280,7 @@ const experienceStyles = `
   font-weight: 700;
   color: #22c55e;
   text-align: center;
-  margin-top: 1rem;
+  margin-top: 16px;
   animation: tePopIn 0.5s cubic-bezier(0.34,1.56,0.64,1), teWinGlow 1.5s ease-in-out 0.5s infinite alternate;
   text-shadow: 0 0 18px rgba(34,197,94,0.5);
 }
@@ -1288,7 +1288,7 @@ const experienceStyles = `
   font-size: clamp(0.75rem, 2vw, 0.95rem);
   font-weight: 500;
   color: rgba(34,197,94,0.7);
-  margin-top: 0.35rem;
+  margin-top: 8px;
   animation: teFadeIn 0.6s ease-out 0.4s both;
 }
 
@@ -1301,7 +1301,7 @@ const experienceStyles = `
   -webkit-backdrop-filter: blur(22px);
   border: 1px solid rgba(255,255,255,0.14);
   border-radius: 24px;
-  padding: clamp(1.5rem, 4vw, 2.5rem);
+  padding: clamp(24px, 4vw, 48px);
   text-align: center;
   animation: teCardAppear 0.8s cubic-bezier(0.22,1,0.36,1);
   box-shadow:
@@ -1316,7 +1316,7 @@ const experienceStyles = `
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin: 0 0 1rem;
+  margin: 0 0 16px;
 }
 .te-card-text {
   font-family: 'Poppins', sans-serif;
@@ -1324,7 +1324,7 @@ const experienceStyles = `
   font-weight: 400;
   color: rgba(255,255,255,0.85);
   line-height: 1.75;
-  margin: 0 0 1.5rem;
+  margin: 0 0 24px;
 }
 .te-card-btns {
   display: flex;
@@ -1338,7 +1338,7 @@ const experienceStyles = `
   font-weight: 600;
   border: none;
   border-radius: 14px;
-  padding: 0.75rem 1.4rem;
+  padding: 12px 24px;
   cursor: pointer;
   min-height: 44px;
   will-change: transform;
@@ -1384,7 +1384,7 @@ const experienceStyles = `
   justify-content: center;
   gap: 0.4em;
   min-height: 48px;
-  padding: clamp(12px, 2vw, 18px) clamp(28px, 5vw, 52px);
+  padding: clamp(12px, 2vw, 16px) clamp(24px, 5vw, 48px);
   border-radius: 999px;
   background: linear-gradient(135deg, #a855f7, #7c3aed);
   box-shadow:

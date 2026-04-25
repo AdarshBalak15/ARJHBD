@@ -75,7 +75,7 @@ function PrivacyModalContent({ onClose }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '1.5rem',
+        padding: '24px',
         pointerEvents: 'none',
       }}
     >
@@ -107,7 +107,7 @@ function PrivacyModalContent({ onClose }) {
           background: 'linear-gradient(160deg, rgba(20, 30, 60, 0.97), rgba(30, 20, 50, 0.97))',
           border: '1px solid rgba(167, 139, 250, 0.2)',
           borderRadius: '20px',
-          padding: 'clamp(1.5rem, 4vw, 2.5rem)',
+          padding: 'clamp(24px, 4vw, 48px)',
           boxShadow:
             '0 24px 64px rgba(0, 0, 0, 0.5), 0 0 40px rgba(142, 45, 226, 0.12)',
           fontFamily: "'Poppins', sans-serif",
@@ -160,7 +160,7 @@ function PrivacyModalContent({ onClose }) {
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
-          margin: '0 0 1.5rem',
+          margin: '0 0 24px',
           textAlign: 'center',
         }}>
           🔐 Privacy Policy
@@ -266,11 +266,11 @@ const ppH3 = {
   fontSize: 'clamp(1rem, 2.5vw, 1.15rem)',
   fontWeight: 600,
   color: '#c4b5fd',
-  margin: '1.4rem 0 0.5rem',
+  margin: '24px 0 8px',
   textShadow: '0 0 10px rgba(167,139,250,0.3)',
 }
 const ppUl = {
-  margin: '0.3rem 0 0.8rem 1.2rem',
+  margin: '4px 0 12px 16px',
   padding: 0,
   listStyleType: "'▸ '",
   lineHeight: 1.9,
@@ -309,7 +309,7 @@ export default function MinimalFooter() {
         style={{
           width: '100%',
           boxSizing: 'border-box',
-          padding: '20px 16px',
+          padding: '24px 16px',
           textAlign: 'center',
           background: 'transparent',
           position: 'relative',
@@ -427,7 +427,7 @@ export default function MinimalFooter() {
             }}
           >
             © 2026 Adarsh Ranjan • All Rights Reserved
-            <span style={{ opacity: 0.5, margin: '0 6px' }}>|</span>
+            <span style={{ opacity: 0.5, margin: '0 8px' }}>|</span>
             <span
               className="footer-privacy-link"
               onClick={openPolicy}
@@ -459,7 +459,7 @@ export default function MinimalFooter() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="minimal-footer__line minimal-footer__tagline"
             style={{
-              margin: '4px 0 0 0',
+              margin: '4px 0 0',
               fontSize: '14px',
               lineHeight: 1.7,
               color: '#dbeafe',
@@ -510,7 +510,7 @@ export default function MinimalFooter() {
           /* ── Mobile ≤480px: tighter typography + layout ── */
           @media (max-width: 480px) {
             .minimal-footer {
-              padding: 16px 12px !important;
+              padding: 16px 16px !important;
             }
             .minimal-footer__line {
               font-size: 12px !important;

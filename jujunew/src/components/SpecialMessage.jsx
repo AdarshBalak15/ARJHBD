@@ -435,7 +435,7 @@ function TypedMessage({ show }) {
       transition={{ duration: 1.2, ease: 'easeOut' }}
       style={{
         textAlign: 'center',
-        marginTop: '1.5rem',
+        marginTop: '24px',
         minHeight: '120px',
       }}
     >
@@ -470,7 +470,7 @@ function LetterCard({ show, onClose }) {
         background: 'linear-gradient(145deg, rgba(30,58,138,0.95), rgba(142,45,226,0.85))',
         border: '1px solid rgba(255,255,255,0.15)',
         borderRadius: '20px',
-        padding: '25px 35px',
+        padding: '24px 32px',
         backdropFilter: 'blur(20px)',
         boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 60px rgba(142,45,226,0.15)',
         textAlign: 'center',
@@ -509,7 +509,7 @@ function LetterCard({ show, onClose }) {
           fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
           fontWeight: 600,
           letterSpacing: '0.03em',
-          marginBottom: '1.2rem',
+          marginBottom: '16px',
           position: 'relative',
           zIndex: 1,
         }}
@@ -534,7 +534,7 @@ function LetterCard({ show, onClose }) {
               fontSize: 'clamp(0.95rem, 1.8vw, 1.12rem)',
               fontWeight: 400,
               lineHeight: 1.8,
-              marginBottom: '1rem',
+              marginBottom: '16px',
               color: 'rgba(255, 255, 255, 0.95)',
             }}
           >
@@ -551,7 +551,7 @@ function LetterCard({ show, onClose }) {
             fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)',
             fontWeight: 500,
             color: '#C8A2C8',
-            marginTop: '1.5rem',
+            marginTop: '24px',
             fontStyle: 'italic',
             letterSpacing: '0.05em',
             textShadow: '0 0 15px rgba(200,162,200,0.5)',
@@ -566,8 +566,8 @@ function LetterCard({ show, onClose }) {
         onClick={onClose}
         style={{
           position: 'absolute',
-          top: '1.2rem',
-          right: '1.5rem',
+          top: '16px',
+          right: '24px',
           background: 'rgba(255,255,255,0.08)',
           border: '1px solid rgba(255,255,255,0.15)',
           color: 'rgba(255,255,255,0.5)',
@@ -845,7 +845,7 @@ function SpecialMessage() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '4rem 2rem',
+        padding: '64px 32px',
         position: 'relative',
         zIndex: 1,
         width: '100%',
@@ -856,7 +856,7 @@ function SpecialMessage() {
           @media (max-width: 768px) {
             .special-container {
               min-height: auto !important;
-              padding: 2rem 1rem !important;
+              padding: 32px 16px !important;
             }
           }
         `}
@@ -893,7 +893,7 @@ function SpecialMessage() {
                   background: 'linear-gradient(135deg, #9D4EDD, #8E2DE2)',
                   border: '1px solid rgba(255,255,255,0.15)',
                   borderRadius: '50px',
-                  padding: '1.3rem 3.8rem',
+                  padding: '24px 64px',
                   cursor: 'pointer',
                   letterSpacing: '0.1em',
                   animation: 'buttonGlow 3s ease-in-out infinite',
@@ -920,7 +920,7 @@ function SpecialMessage() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              marginTop: '2.5rem',
+              marginTop: '48px',
             }}
           >
             {/* Video container with 9:16 preview — antigravity wrapper for mobile */}
@@ -1041,7 +1041,7 @@ function SpecialMessage() {
                 transition={{ delay: 0.6, duration: 0.6 }}
                 style={{
                   textAlign: 'center',
-                  marginTop: '1rem',
+                  marginTop: '16px',
                   fontFamily: "'Poppins', sans-serif",
                   fontSize: 'clamp(0.8rem, 1.5vw, 0.95rem)',
                   color: 'rgba(200,162,200,0.7)',
@@ -1082,8 +1082,8 @@ function SpecialMessage() {
               onClick={exitCinematicVideo}
               style={{
                 position: 'absolute',
-                top: '1.5rem',
-                right: '1.5rem',
+                top: '24px',
+                right: '24px',
                 zIndex: 310,
                 width: '44px',
                 height: '44px',

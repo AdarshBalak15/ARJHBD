@@ -234,12 +234,12 @@ function NavigationDots() {
         transition={{ delay: 4.5, duration: 0.6 }}
         style={{
           position: 'fixed',
-          right: '1.75rem',
+          right: '24px',
           top: '50%',
           transform: 'translateY(-50%)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.25rem',
+          gap: '24px',
           zIndex: 150,
         }}
       >
