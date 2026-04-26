@@ -460,22 +460,22 @@ export default function MinimalFooter() {
             className="minimal-footer__line minimal-footer__tagline"
             style={{
               margin: '4px 0 0',
-              fontSize: '14px',
-              lineHeight: 1.7,
-              color: '#dbeafe',
-              fontFamily: "'Caveat', 'Dancing Script', cursive",
-              fontWeight: 400,
-              opacity: 0.6,
-              fontStyle: 'italic',
+              fontSize: '15px',
+              lineHeight: 1.75,
+              color: 'rgba(255, 255, 255, 0.82)',
+              fontFamily: "'Caveat', 'Patrick Hand', sans-serif",
+              fontWeight: 800,
+              fontStyle: 'normal',
+              letterSpacing: '0.4px',
               textAlign: 'center',
               maxWidth: '480px',
               width: '100%',
-              textShadow: '0 0 6px rgba(255,255,255,0.15)',
+              textShadow: '0 0 10px rgba(167, 139, 250, 0.25), 0 1px 3px rgba(0, 0, 0, 0.4)',
               wordWrap: 'break-word',
               overflowWrap: 'break-word',
             }}
           >
-            Some pages on the internet are just pages. This one is a memory.{' '} <br />
+            Some pages on the internet are just pages. This one is a memory.<br />
             Sometimes The Simplest Gestures Leave The Deepest Imprints.
           </motion.p>
         </div>
@@ -516,7 +516,8 @@ export default function MinimalFooter() {
               font-size: 12px !important;
             }
             .minimal-footer__tagline {
-              font-size: 10px !important;
+              font-size: 13px !important;
+              line-height: 1.7 !important;
               max-width: 320px !important;
               padding: 0 8px;
             }
