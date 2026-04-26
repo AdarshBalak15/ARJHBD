@@ -460,7 +460,7 @@ export default function MinimalFooter() {
             className="minimal-footer__line minimal-footer__tagline"
             style={{
               margin: '4px 0 0',
-              fontSize: '15px',
+              fontSize: '18px',
               lineHeight: 1.75,
               color: 'rgba(255, 255, 255, 0.82)',
               fontFamily: "'Caveat', 'Patrick Hand', sans-serif",
@@ -516,7 +516,7 @@ export default function MinimalFooter() {
               font-size: 12px !important;
             }
             .minimal-footer__tagline {
-              font-size: 13px !important;
+              font-size: 16px !important;
               line-height: 1.7 !important;
               max-width: 320px !important;
               padding: 0 8px;

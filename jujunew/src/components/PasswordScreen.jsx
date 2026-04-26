@@ -73,6 +73,25 @@ function PasswordScreen({ onUnlock }) {
         overflowY: 'auto',
       }}
     >
+      {/* ── Suppress browser-native password reveal icons ── */}
+      <style>{`
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+          display: none !important;
+        }
+        input[type="password"]::-webkit-credentials-auto-fill-button,
+        input[type="password"]::-webkit-textfield-decoration-container {
+          display: none !important;
+        }
+        input[type="password"]::-webkit-contacts-auto-fill-button {
+          display: none !important;
+        }
+        /* Also hide for toggled text type within the password wrapper */
+        .password-input-wrapper input::-ms-reveal,
+        .password-input-wrapper input::-ms-clear {
+          display: none !important;
+        }
+      `}</style>
       {/* ── Content area — fills remaining space, centers card ── */}
       <div
         style={{
@@ -143,7 +162,7 @@ function PasswordScreen({ onUnlock }) {
             onSubmit={handleUnlockFlow}
             style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
           >
-            <div style={{ position: 'relative', width: '100%' }}>
+            <div className="password-input-wrapper" style={{ position: 'relative', width: '100%' }}>
               <motion.input
                 type={showPassword ? "text" : "password"}
                 value={password}
@@ -203,11 +222,24 @@ function PasswordScreen({ onUnlock }) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: 'rgba(255, 255, 255, 0.55)',
-                  transition: 'color 0.2s ease',
+                  transition: 'color 0.2s ease, transform 0.15s ease',
                   outline: 'none',
+                  WebkitTapHighlightColor: 'transparent',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255, 255, 255, 0.55)')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)'
+                  e.currentTarget.style.transform = 'translateY(-50%) scale(1.12)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.55)'
+                  e.currentTarget.style.transform = 'translateY(-50%) scale(1)'
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-50%) scale(0.9)'
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-50%) scale(1.12)'
+                }}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
