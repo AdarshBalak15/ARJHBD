@@ -167,8 +167,9 @@ export default function HangingTimeline() {
         <div className="hanging-timeline" ref={timelineRef} style={{
             position: 'relative',
             width: '100%',
-            height: '100%',
-            overflow: 'hidden',
+            height: 'auto',
+            minHeight: 'fit-content',
+            overflow: 'visible',
             padding: '64px 0',
         }}>
             <style>{keyframes}</style>
@@ -218,8 +219,8 @@ export default function HangingTimeline() {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                height: '100%',
-                paddingBottom: '32px',
+                height: 'auto',
+                minHeight: 'fit-content',
             }}>
 
                 {/* ── Section Title ── */}

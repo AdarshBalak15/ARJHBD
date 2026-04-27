@@ -230,6 +230,7 @@ function App() {
             <style>{`
               .content-split {
                 display: flex;
+                align-items: flex-start;
                 width: 100%;
                 position: relative;
               }
@@ -238,6 +239,7 @@ function App() {
                 min-width: 320px;
                 background: linear-gradient(180deg, #021a16 0%, #064e3b 50%, #065f46 100%);
                 position: relative;
+                align-self: flex-start;
               }
               .column-right {
                 width: 70%;

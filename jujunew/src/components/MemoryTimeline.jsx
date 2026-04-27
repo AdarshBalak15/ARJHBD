@@ -417,8 +417,8 @@ function MemoryTimeline() {
         style={{
           position: 'relative',
           zIndex: 1,
-          minHeight: '100vh',
-          padding: 'clamp(4rem, 8vw, 8rem) clamp(1rem, 3vw, 2rem)',
+          minHeight: 'auto',
+          padding: 'clamp(2rem, 4vw, 3rem) clamp(1rem, 3vw, 2rem) clamp(3rem, 6vw, 5rem)',
         }}
       >
         {/* Inject keyframes */}
@@ -464,7 +464,8 @@ function MemoryTimeline() {
             fontSize: 'clamp(2.5rem, 7vw, 3.5rem)',
             fontWeight: 800,
             textAlign: 'center',
-            marginBottom: 'clamp(3rem, 6vw, 5rem)',
+            marginTop: 0,
+            marginBottom: 'clamp(1.5rem, 4vw, 2rem)',
           }}
         >
           Our Journey

@@ -75,11 +75,11 @@ function Questionnaire({ onComplete }) {
       }}
     >
       <div className="questionnaire-container" style={{
-        minHeight: '100vh',
+        minHeight: 'auto',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '32px',
+        padding: 'clamp(48px, 6vw, 64px) 32px clamp(24px, 4vw, 40px)',
         position: 'relative',
         zIndex: 1,
         width: '100%',
@@ -87,8 +87,7 @@ function Questionnaire({ onComplete }) {
       <style>{`
         @media (max-width: 768px) {
           .questionnaire-container {
-            min-height: auto !important;
-            padding: 48px 16px !important;
+            padding: 32px 16px 24px !important;
           }
         }
       `}</style>

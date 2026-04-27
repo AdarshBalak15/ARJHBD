@@ -678,7 +678,13 @@ function TouchMeCTA() {
                 <h3 className="te-card-title">From Diary 💖</h3>
                 <p className="te-card-text">
                   “Ek arzoo hai ki us arju ki sab arzoo puri ho,
-                  Jis arzoo ko hasil karne mein usne sab arzooein pichhe chhodi ho.”
+                  <br />Jis arzoo ko hasil karne mein usne sab arzooein pichhe chhodi ho.”
+                  <br /> "Mujhe mujhse behtar jaanti hai wo
+                  <br /> Sabme se behtar pehchanti hai wo
+                  <br /> Tabhi jaate waqt dubara palat kr nhi dekha
+                  <br /> Ek mai hu jo uski milne ki aas mai baitha hua hu
+                  <br /> Shayad y bhi jaanti hai wo"
+                  <br />  🤭🤭🤭🤭🤭🤭🤭🤭🤭🤭🤭🤭🤭🤭🤭
                   <br /> Something between us needs attention… before it turns into complete silence.
                   <br />Happy Birthday, Madam. 💕
                 </p>
@@ -742,10 +748,11 @@ const experienceStyles = `
 }
 .te-content {
   width: 100%;
-  max-width: 520px;
+  max-width: 600px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
   position: relative;
 }
 .te-step {
@@ -754,10 +761,21 @@ const experienceStyles = `
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 180px;
-  padding: 24px 0;
+  height: auto;
+  min-height: fit-content;
+  padding: 24px 0 12px;
+  gap: 24px;
   animation: teFadeIn 0.65s ease-out;
   position: relative;
+}
+
+/* ═══════ DESKTOP: Unified vertical stage for all states ═══════ */
+@media (min-width: 769px) {
+  .te-step {
+    min-height: clamp(320px, 42vw, 420px);
+    padding: 32px 0 24px;
+    gap: 32px;
+  }
 }
 
 /* ═══════ TYPOGRAPHY ═══════ */
@@ -767,7 +785,7 @@ const experienceStyles = `
   font-weight: 700;
   color: #fff;
   text-align: center;
-  margin: 16px 0 0;
+  margin: 0;
   text-shadow: 0 2px 10px rgba(0,0,0,0.35);
   animation: teFadeIn 0.7s ease-out 0.25s both;
 }
@@ -785,7 +803,7 @@ const experienceStyles = `
   font-weight: 500;
   color: rgba(200,162,200,0.85);
   text-align: center;
-  margin-top: 8px;
+  margin: 0;
   font-style: italic;
   animation: teFadeIn 0.6s ease-out 0.3s both;
   text-shadow: 0 0 10px rgba(200,162,200,0.3);
@@ -797,7 +815,7 @@ const experienceStyles = `
   justify-content: center;
   gap: clamp(8px, 1.8vw, 16px);
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 .te-flag {
   width: 0; height: 0;
@@ -852,7 +870,7 @@ const experienceStyles = `
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 0 0;
+  padding: 0;
   animation: teFadeIn 0.8s ease-out;
 }
 
@@ -1150,7 +1168,15 @@ const experienceStyles = `
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: 24px;
   animation: teFadeIn 0.5s ease-out;
+}
+@media (min-width: 769px) {
+  .te-game {
+    min-height: clamp(320px, 42vw, 420px);
+    gap: 32px;
+  }
 }
 .te-game-header {
   font-family: 'Poppins', sans-serif;
@@ -1158,7 +1184,7 @@ const experienceStyles = `
   font-weight: 600;
   color: #a855f7;
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 0;
   text-shadow: 0 0 12px rgba(168,85,247,0.3);
   min-height: 2em;
   display: flex;
@@ -1280,7 +1306,7 @@ const experienceStyles = `
   font-weight: 700;
   color: #22c55e;
   text-align: center;
-  margin-top: 16px;
+  margin-top: 0;
   animation: tePopIn 0.5s cubic-bezier(0.34,1.56,0.64,1), teWinGlow 1.5s ease-in-out 0.5s infinite alternate;
   text-shadow: 0 0 18px rgba(34,197,94,0.5);
 }
@@ -1295,18 +1321,28 @@ const experienceStyles = `
 /* ═══════ STEP 9 — GLASS CARD ═══════ */
 .te-glass-card {
   width: 92%;
-  max-width: 440px;
+  max-width: 550px;
   background: rgba(255,255,255,0.07);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
   border: 1px solid rgba(255,255,255,0.14);
   border-radius: 24px;
-  padding: clamp(24px, 4vw, 48px);
+  padding: clamp(24px, 4vw, 36px);
   text-align: center;
   animation: teCardAppear 0.8s cubic-bezier(0.22,1,0.36,1);
   box-shadow:
     0 20px 60px rgba(0,0,0,0.3),
     0 0 40px rgba(168,85,247,0.12);
+}
+@media (max-width: 480px) {
+  .te-glass-card {
+    padding: 20px 16px;
+    max-width: 95%;
+  }
+  .te-card-text {
+    font-size: 0.85rem;
+    line-height: 1.75;
+  }
 }
 .te-card-title {
   font-family: 'Poppins', sans-serif;
@@ -1323,8 +1359,15 @@ const experienceStyles = `
   font-size: clamp(0.82rem, 1.8vw, 0.98rem);
   font-weight: 400;
   color: rgba(255,255,255,0.85);
-  line-height: 1.75;
-  margin: 0 0 24px;
+  line-height: 1.8;
+  margin: 0 0 20px;
+  white-space: normal;
+  text-align: left;
+}
+.te-card-text br {
+  display: block;
+  content: '';
+  margin-bottom: 5px;
 }
 .te-card-btns {
   display: flex;
