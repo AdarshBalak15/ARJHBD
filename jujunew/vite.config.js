@@ -19,6 +19,16 @@ export default defineConfig({
       ext: '.br',
     }),
   ],
+  // ── Platform detection for dual deployment (Vercel + Netlify) ──────────
+  // Vercel sets VERCEL=1, Netlify sets NETLIFY=true during their builds.
+  // This injects the deploy target so frontend API calls route correctly.
+  define: {
+    __DEPLOY_TARGET__: JSON.stringify(
+      process.env.VERCEL ? 'vercel' :
+      process.env.NETLIFY ? 'netlify' :
+      'local'
+    ),
+  },
   build: {
     // Enable minification with terser for better compression
     minify: 'terser',

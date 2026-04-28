@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
+import { API } from './utils/apiEndpoints'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AudioProvider } from './contexts/AudioContext'
 import Intro from './components/Intro'
@@ -44,7 +45,7 @@ function App() {
   useEffect(() => {
     const trackVisitor = async () => {
       try {
-        await fetch('/.netlify/functions/track', {
+        await fetch(API.track, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ page: window.location.pathname }),

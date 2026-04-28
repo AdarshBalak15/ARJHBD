@@ -1,4 +1,5 @@
 import { useState, lazy, Suspense } from 'react'
+import { API } from '../utils/apiEndpoints'
 import { motion } from 'framer-motion'
 
 const MinimalFooter = lazy(() => import('./MinimalFooter'))
@@ -23,7 +24,7 @@ function PasswordScreen({ onUnlock }) {
 
     try {
       // Send password to backend API for secure validation
-      const response = await fetch('/.netlify/functions/login', {
+      const response = await fetch(API.login, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
