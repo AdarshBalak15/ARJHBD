@@ -2,18 +2,20 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { API } from './utils/apiEndpoints'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AudioProvider } from './contexts/AudioContext'
-import Intro from './components/Intro'
 import PasswordScreen from './components/PasswordScreen'
-import Hero from './components/Hero'
-import NavigationDots from './components/NavigationDots'
 import AudioPlayer from './components/AudioPlayer'
-import AudioToggle from './components/AudioToggle'
-import ParticlesBackground from './components/ParticlesBackground'
-import BackgroundGradient from './components/BackgroundGradient'
-import CustomCursor from './components/CustomCursor'
-import StarField from './components/StarField'
-import MobileAudioToggle from './components/MobileAudioToggle'
 
+// ── Lazy-loaded: Not needed for initial PasswordScreen render ──
+// Defers Three.js (888KB), tsParticles (144KB), GSAP from critical path
+const CustomCursor = lazy(() => import('./components/CustomCursor'))
+const BackgroundGradient = lazy(() => import('./components/BackgroundGradient'))
+const ParticlesBackground = lazy(() => import('./components/ParticlesBackground'))
+const Intro = lazy(() => import('./components/Intro'))
+const Hero = lazy(() => import('./components/Hero'))
+const NavigationDots = lazy(() => import('./components/NavigationDots'))
+const AudioToggle = lazy(() => import('./components/AudioToggle'))
+const MobileAudioToggle = lazy(() => import('./components/MobileAudioToggle'))
+const StarField = lazy(() => import('./components/StarField'))
 const HangingTimeline = lazy(() => import('./components/HangingTimeline'))
 const MemoryTimeline = lazy(() => import('./components/MemoryTimeline'))
 const SpecialMessage = lazy(() => import('./components/SpecialMessage'))
@@ -196,9 +198,12 @@ function App() {
 
   return (
     <AudioProvider>
-      <CustomCursor />
-      <BackgroundGradient />
-      <ParticlesBackground />
+      {/* Decorative backgrounds — lazy-loaded, null fallback (invisible during load) */}
+      <Suspense fallback={null}>
+        <CustomCursor />
+        <BackgroundGradient />
+        <ParticlesBackground />
+      </Suspense>
       <AudioPlayer isUnlocked={isPasswordUnlocked} showIntro={showIntro} />
 
       <AnimatePresence mode="wait">
@@ -209,7 +214,9 @@ function App() {
 
       <AnimatePresence mode="wait">
         {showIntro && isPasswordUnlocked && (
-          <Intro key="intro" onComplete={() => setShowIntro(false)} />
+          <Suspense fallback={null}>
+            <Intro key="intro" onComplete={() => setShowIntro(false)} />
+          </Suspense>
         )}
       </AnimatePresence>
 
@@ -224,9 +231,9 @@ function App() {
             className="w-full max-w-full"
             style={{ width: '100%', maxWidth: '100%', minWidth: '100%', margin: 0, padding: 0, overflowX: 'hidden' }}
           >
-            <StarField />
-            <NavigationDots />
-            <Hero />
+            <Suspense fallback={null}><StarField /></Suspense>
+            <Suspense fallback={null}><NavigationDots /></Suspense>
+            <Suspense fallback={<div style={{ minHeight: '100vh' }} />}><Hero /></Suspense>
 
             <style>{`
               .content-split {
@@ -280,10 +287,10 @@ function App() {
       </AnimatePresence>
 
       {/* Audio toggle — visible only in middle sections and not on small devices */}
-      {showAudio && !isSmallDevice && <AudioToggle />}
+      {showAudio && !isSmallDevice && <Suspense fallback={null}><AudioToggle /></Suspense>}
 
       {/* Mobile Audio toggle — always visible on small devices after intro */}
-      {isPasswordUnlocked && !showIntro && <MobileAudioToggle />}
+      {isPasswordUnlocked && !showIntro && <Suspense fallback={null}><MobileAudioToggle /></Suspense>}
 
       {/* Footer rendered OUTSIDE motion.div to escape its stacking context.
           This lets the footer's z-index compete at the root level, so it can

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 function Intro({ onComplete }) {
@@ -51,8 +51,12 @@ function Intro({ onComplete }) {
           <img
             src="/eyes.jpg.jpeg"
             alt="Her Eyes"
+            fetchpriority="high"
+            width={600}
+            height={400}
             style={{
               width: '100%',
+              height: 'auto',
               display: 'block',
               maskImage: 'radial-gradient(ellipse at center, black 60%, transparent 100%)',
               WebkitMaskImage: 'radial-gradient(ellipse at center, black 60%, transparent 100%)',
@@ -105,4 +109,4 @@ function Intro({ onComplete }) {
   )
 }
 
-export default Intro
+export default memo(Intro)

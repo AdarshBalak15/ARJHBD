@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, memo } from 'react'
 import { motion } from 'framer-motion'
 
 const memories = [
@@ -69,7 +69,7 @@ const floatKeyframes = `
 `
 
 /* ─── Glowing timeline node ─── */
-const TimelineNode = ({ active }) => (
+const TimelineNode = memo(({ active }) => (
   <div
     style={{
       position: 'absolute',
@@ -109,9 +109,9 @@ const TimelineNode = ({ active }) => (
     />
   </div>
 )
-
+)
 /* ─── Single memory row ─── */
-const MemoryRow = ({ memory, index, active }) => {
+const MemoryRow = memo(({ memory, index, active }) => {
   return (
     <div
       className="memory-row"
@@ -339,7 +339,7 @@ const MemoryRow = ({ memory, index, active }) => {
       </motion.div>
     </div>
   )
-}
+})
 
 /* ─── Main Component ─── */
 function MemoryTimeline() {

@@ -43,19 +43,27 @@ export default defineConfig({
         safari10: true,         // Work around Safari 10 bugs
       },
     },
-    // Code splitting configuration
+    // Code splitting configuration — isolate heavy deps for deferred loading
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Three.js ecosystem — largest dependency, isolate for caching
+          // Three.js ecosystem — largest dependency (~888KB), fully deferred
           if (id.includes('three') || id.includes('@react-three')) {
             return 'three-vendor'
           }
-          // Animation libraries
-          if (id.includes('framer-motion') || id.includes('gsap')) {
+          // GSAP — only used in BackgroundGradient (lazy), keep separate
+          if (id.includes('gsap')) {
+            return 'gsap-vendor'
+          }
+          // Framer Motion — needed immediately for PasswordScreen
+          if (id.includes('framer-motion')) {
             return 'animation-vendor'
           }
-          // Particles engine
+          // Typed.js — only used in Hero + SpecialMessage (both lazy)
+          if (id.includes('typed.js')) {
+            return 'typed-vendor'
+          }
+          // Particles engine — fully deferred
           if (id.includes('tsparticles') || id.includes('@tsparticles')) {
             return 'particles-vendor'
           }
@@ -75,7 +83,7 @@ export default defineConfig({
     // Asset inlining threshold (4KB)
     assetsInlineLimit: 4096,
     // Target modern browsers for smaller output
-    target: 'es2020',
+    target: 'esnext',
   },
   // Proxy during local dev — requires `npm run server:dev` on port 3001
   server: {

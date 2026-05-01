@@ -1,8 +1,8 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, memo } from 'react'
 import Particles, { initParticlesEngine } from '@tsparticles/react'
 import { loadSlim } from '@tsparticles/slim'
 
-export default function ParticlesBackground() {
+function ParticlesBackground() {
   const [init, setInit] = useState(false)
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export default function ParticlesBackground() {
 
   const options = useMemo(() => ({
     particles: {
-      number: { value: 30 },
+      number: { value: 20 },
       color: { value: '#3B82F6' },
       opacity: {
         value: 0.4,
@@ -55,7 +55,7 @@ export default function ParticlesBackground() {
     background: {
       color: 'transparent',
     },
-    fpsLimit: 60,
+    fpsLimit: 30,
   }), [])
 
   if (!init) return null
@@ -76,3 +76,5 @@ export default function ParticlesBackground() {
     />
   )
 }
+
+export default memo(ParticlesBackground)

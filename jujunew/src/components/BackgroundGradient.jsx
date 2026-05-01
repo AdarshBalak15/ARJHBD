@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, memo } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -45,4 +45,4 @@ function BackgroundGradient() {
   )
 }
 
-export default BackgroundGradient
+export default memo(BackgroundGradient)

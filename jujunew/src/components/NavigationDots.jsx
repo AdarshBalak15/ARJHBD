@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, memo } from 'react'
 import { motion } from 'framer-motion'
 
 const sections = [
@@ -139,7 +139,7 @@ function useActiveSection() {
 }
 
 /* ─── NavDot ─── */
-function NavDot({ label, isActive, onClick }) {
+const NavDot = memo(function NavDot({ label, isActive, onClick }) {
   return (
     <motion.button
       className="nav-dot-btn"
@@ -182,7 +182,7 @@ function NavDot({ label, isActive, onClick }) {
       }}
     />
   )
-}
+})
 
 /* ─── NavigationDots ─── */
 function NavigationDots() {
