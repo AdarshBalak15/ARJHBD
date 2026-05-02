@@ -147,6 +147,21 @@ export default function HangingTimeline() {
     const timelineRef = useRef(null);
     const [showGapFiller, setShowGapFiller] = useState(false);
 
+    // ── Mobile/Tablet detection: always show 19.jpeg on ≤1024px ──
+    const [isMobileOrTablet, setIsMobileOrTablet] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.matchMedia('(max-width: 1024px)').matches;
+        }
+        return false;
+    });
+
+    useEffect(() => {
+        const mql = window.matchMedia('(max-width: 1024px)');
+        const handleChange = (e) => setIsMobileOrTablet(e.matches);
+        mql.addEventListener('change', handleChange);
+        return () => mql.removeEventListener('change', handleChange);
+    }, []);
+
     useEffect(() => {
         const handleShow = () => setShowGapFiller(true);
         const handleHide = () => setShowGapFiller(false);
@@ -392,14 +407,15 @@ export default function HangingTimeline() {
                     ))}
 
                     {/* ── Dynamic Gap Filler (Touch Me → show / Restart → remove) ── */}
-                    {showGapFiller && (
+                    {/* On mobile/tablet: always visible. On desktop: gated by Touch Me state */}
+                    {(showGapFiller || isMobileOrTablet) && (
                         <motion.div
                             id="dynamic-gap-image"
                             className="gap-image photo-wrapper"
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={isMobileOrTablet ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 20 }}
-                            transition={{ duration: 0.35, ease: 'easeOut' }}
+                            exit={isMobileOrTablet ? undefined : { opacity: 0, y: 20 }}
+                            transition={isMobileOrTablet ? { duration: 0 } : { duration: 0.35, ease: 'easeOut' }}
                             style={{
                                 display: 'flex',
                                 flexDirection: 'column',
