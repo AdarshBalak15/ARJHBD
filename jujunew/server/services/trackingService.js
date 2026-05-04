@@ -152,8 +152,9 @@ async function insertTrackingRecord(data) {
  *   error?:     string,
  * }>}
  */
-export async function trackUser(req, userId = 'anonymous') {
+export async function trackUser(req, userId = 'anonymous', options = {}) {
   const timestamp = new Date().toISOString();
+  const trigger = options.trigger || 'page_load';
 
   try {
     // ── Step 1: Extract IP address ─────────────────────────────────────────
@@ -191,7 +192,7 @@ export async function trackUser(req, userId = 'anonymous') {
       ip_type:         ipType,
       is_proxy:        proxy.isLikelyProxy,
       proxy_indicators: proxy.indicators.join('; '),
-      status:          'active',
+      status:          trigger === 'unlock' ? 'unlock' : 'active',
     };
 
     // ── Step 5: Validate and normalize ─────────────────────────────────────

@@ -212,13 +212,20 @@ exports.handler = async (event) => {
     const userAgent = event.headers["user-agent"] || "unknown";
     const device = parseDevice(userAgent);
 
+    // 3.5️⃣  Read optional body fields (unlock trigger, user_id)
+    let body = {};
+    try { body = JSON.parse(event.body || "{}"); } catch { body = {}; }
+    const userId   = body.user_id || "visitor";
+    const trigger  = body.trigger || "page_load";
+    const status   = trigger === "unlock" ? "unlock" : "active";
+
     // 4️⃣  Insert into Supabase
     const db = getSupabase();
     let dbSuccess = false;
 
     if (db) {
       const insertData = {
-        user_id: "visitor",
+        user_id: userId,
         ip_address: ip || "auto",
         city: geo.city,
         region: geo.region,
@@ -237,7 +244,7 @@ exports.handler = async (event) => {
         ip_type: "public",
         is_proxy: false,
         proxy_indicators: "",
-        status: "active",
+        status,
       };
 
       console.log("[TRACK] Inserting:", JSON.stringify(insertData));

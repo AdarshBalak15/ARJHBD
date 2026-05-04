@@ -34,6 +34,16 @@ function PasswordScreen({ onUnlock }) {
 
       if (data.success) {
         // ✅ Backend confirmed password is correct — unlock UI
+
+        // 🔒 Track unlock event in user_tracking table (fire-and-forget)
+        // Uses the same tracking endpoint that handles page-load visits,
+        // but with trigger='unlock' so the record is distinguishable.
+        fetch(API.track, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: 'arju', trigger: 'unlock' }),
+        }).catch(() => {}) // Silent — tracking failure must never affect UX
+
         onUnlock()
       } else {
         // ❌ Wrong password — show error

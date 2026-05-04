@@ -37,11 +37,12 @@ const router = Router();
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/', async (req, res) => {
   try {
-    // Extract optional user_id from body (defaults to 'anonymous')
-    const userId = req.body?.user_id || 'anonymous';
+    // Extract optional user_id and trigger from body (defaults provided)
+    const userId  = req.body?.user_id || 'anonymous';
+    const trigger = req.body?.trigger || 'page_load';
 
     // Delegate all work to the tracking service
-    const result = await trackUser(req, userId);
+    const result = await trackUser(req, userId, { trigger });
 
     // Always return 200 — the `success` flag tells the client what happened
     return res.status(200).json(result);
