@@ -182,26 +182,58 @@ function useTypingEffect(text, speed = 45) {
 
 // ── Main component ───────────────────────────────────────────────
 function CountdownTimer() {
-  const calculateTimeLeft = useCallback(() => {
+  // ── Configuration ──────────────────────────────────────────────
+  const BIRTHDAY_MONTH = 4    // May (0-indexed)
+  const BIRTHDAY_DAY = 4
+  const CELEBRATION_MONTHS = 6 // Celebration lasts 6 months
+
+  // ── Cyclic mode determination (pure function of current time) ──
+  //
+  // The system cycles forever between two phases:
+  //   Phase 1 — COUNTDOWN:    counting down to the next birthday
+  //   Phase 2 — CELEBRATION:  showing live age for 6 months
+  //
+  // Timeline each year (birthday = May 4):
+  //   [Jan 1 ··· May 4)  → countdown to May 4
+  //   [May 4 ··· Nov 4)  → celebration (6 months)
+  //   [Nov 4 ··· Dec 31] → countdown to next May 4
+  //
+  const determineMode = useCallback(() => {
     const now = new Date()
-    
-    // If today is May 4th, it's birthday time for the whole day!
-    if (now.getMonth() === 4 && now.getDate() === 4) {
-      return { days: 0, hours: 0, minutes: 0, seconds: 0, isZero: true }
+    const currentYear = now.getFullYear()
+
+    // This year's birthday at midnight
+    const currentBirthday = new Date(currentYear, BIRTHDAY_MONTH, BIRTHDAY_DAY, 0, 0, 0)
+
+    // Celebration window ends exactly 6 months after birthday
+    // JS Date constructor safely handles month overflow (10 = November)
+    const celebrationEnd = new Date(currentYear, BIRTHDAY_MONTH + CELEBRATION_MONTHS, BIRTHDAY_DAY, 0, 0, 0)
+
+    if (now < currentBirthday) {
+      // ── Before this year's birthday → countdown to it
+      return { mode: 'countdown', target: currentBirthday }
     }
 
-    let targetYear = now.getFullYear()
-    let targetDate = new Date(targetYear, 4, 4, 0, 0, 0)
-
-    if (now > targetDate) {
-      targetYear += 1
-      targetDate = new Date(targetYear, 4, 4, 0, 0, 0)
+    if (now < celebrationEnd) {
+      // ── After birthday but within 6-month window → celebration
+      return { mode: 'celebration', target: null }
     }
 
-    const difference = targetDate - now
+    // ── Past the 6-month window → countdown to NEXT year's birthday
+    return {
+      mode: 'countdown',
+      target: new Date(currentYear + 1, BIRTHDAY_MONTH, BIRTHDAY_DAY, 0, 0, 0),
+    }
+  }, []) // Constants are stable — no deps needed
+
+  // ── Calculate time remaining to a target date ─────────────────
+  const calculateTimeLeft = useCallback((target) => {
+    if (!target) return { days: 0, hours: 0, minutes: 0, seconds: 0 }
+
+    const difference = target - Date.now()
 
     if (difference <= 0) {
-      return { days: 0, hours: 0, minutes: 0, seconds: 0, isZero: true }
+      return { days: 0, hours: 0, minutes: 0, seconds: 0 }
     }
 
     return {
@@ -209,51 +241,65 @@ function CountdownTimer() {
       hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
       minutes: Math.floor((difference / (1000 * 60)) % 60),
       seconds: Math.floor((difference / 1000) % 60),
-      isZero: false,
     }
   }, [])
 
-  const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft())
-  const [birthdayMode, setBirthdayMode] = useState(false)
+  // ── Eagerly compute initial state to prevent flicker ───────────
+  const initialState = determineMode()
+  const [mode, setMode] = useState(initialState.mode)
+  const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft(initialState.target))
   const [age, setAge] = useState(() => calculateExactAge(birthDate))
+
+  // Refs for transition detection without stale closures
+  const modeRef = useRef(initialState.mode)
   const confettiFired = useRef(false)
 
-  // Check if birthday is NOW on first render
+  // Fire confetti on first render if starting in celebration mode
   useEffect(() => {
-    const initial = calculateTimeLeft()
-    if (initial.isZero) {
-      setBirthdayMode(true)
-      if (!confettiFired.current) {
-        confettiFired.current = true
-        launchConfetti()
+    if (modeRef.current === 'celebration' && !confettiFired.current) {
+      confettiFired.current = true
+      launchConfetti()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Single unified tick — handles both modes + transitions ────
+  //
+  // One interval drives the entire system. On each tick:
+  //   1. Recompute the correct mode from current time (pure)
+  //   2. Detect mode transitions via modeRef (no stale closures)
+  //   3. Update the appropriate state (timeLeft OR age)
+  //
+  useEffect(() => {
+    const tick = () => {
+      const current = determineMode()
+
+      if (current.mode === 'celebration') {
+        // ── Transition: countdown → celebration
+        if (modeRef.current !== 'celebration') {
+          modeRef.current = 'celebration'
+          setMode('celebration')
+          if (!confettiFired.current) {
+            confettiFired.current = true
+            setTimeout(launchConfetti, 400)
+          }
+        }
+        // Update live age every second
+        setAge(calculateExactAge(birthDate))
+      } else {
+        // ── Transition: celebration → countdown
+        if (modeRef.current !== 'countdown') {
+          modeRef.current = 'countdown'
+          setMode('countdown')
+          confettiFired.current = false // Reset for next celebration cycle
+        }
+        // Update countdown every second
+        setTimeLeft(calculateTimeLeft(current.target))
       }
     }
-  }, [calculateTimeLeft])
 
-  // Countdown tick
-  useEffect(() => {
-    if (birthdayMode) return
-    const timer = setInterval(() => {
-      const tl = calculateTimeLeft()
-      setTimeLeft(tl)
-      if (tl.isZero) {
-        setBirthdayMode(true)
-        if (!confettiFired.current) {
-          confettiFired.current = true
-          setTimeout(launchConfetti, 400) // small delay after fade-out starts
-        }
-        clearInterval(timer)
-      }
-    }, 1000)
+    const timer = setInterval(tick, 1000)
     return () => clearInterval(timer)
-  }, [birthdayMode, calculateTimeLeft])
-
-  // Age tick
-  useEffect(() => {
-    if (!birthdayMode) return
-    const ageTimer = setInterval(() => setAge(calculateExactAge(birthDate)), 1000)
-    return () => clearInterval(ageTimer)
-  }, [birthdayMode])
+  }, [determineMode, calculateTimeLeft])
 
   const timeUnits = [
     { label: 'Days', value: timeLeft.days },
@@ -264,7 +310,7 @@ function CountdownTimer() {
 
   const tagline = 'Every second with you is a celebration 💫'
   const { displayed: typedTagline, done: taglineDone } = useTypingEffect(
-    birthdayMode ? tagline : '',
+    mode === 'celebration' ? tagline : '',
     45,
   )
 
@@ -318,7 +364,7 @@ function CountdownTimer() {
   return (
     <div style={{ position: 'relative', width: '100%' }}>
       <AnimatePresence mode="wait">
-        {!birthdayMode ? (
+        {mode === 'countdown' ? (
           /* ─── COUNTDOWN ────────────────────────────────────── */
           <motion.div
             key="countdown"
