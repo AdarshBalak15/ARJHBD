@@ -7,6 +7,13 @@
   publish = "dist"
   functions = "netlify/functions"
 
+[build.environment]
+  NODE_VERSION = "18"
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["netlify/functions/**"]
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Netlify Functions must NOT be intercepted by SPA redirect.
 # This rule ensures /.netlify/* passes through to functions.

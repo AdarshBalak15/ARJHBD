@@ -34,4 +34,12 @@ export const API = {
       : '/.netlify/functions/track',
 };
 
+// Production diagnostic — helps verify correct platform detection
+// console.error is preserved in production builds (not stripped by terser)
+if (typeof window !== 'undefined') {
+  console.warn('[API] Deploy target:', DEPLOY_TARGET);
+  console.warn('[API] Login endpoint:', API.login);
+  console.warn('[API] Track endpoint:', API.track);
+}
+
 export default API;

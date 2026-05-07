@@ -34,9 +34,9 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,     // Remove all console.* calls
+        drop_console: false,     // Use pure_funcs for granular control instead
         drop_debugger: true,    // Remove debugger statements
-        pure_funcs: ['console.log', 'console.warn', 'console.info'],
+        pure_funcs: ['console.log', 'console.info'],  // Keep console.error & console.warn for production debugging
         passes: 2,              // Run compression twice for better results
       },
       mangle: {

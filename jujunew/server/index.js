@@ -19,8 +19,11 @@ app.use(cors({
   origin: [
     'http://localhost:5173', // Vite dev
     'http://localhost:4173', // Vite preview
+    /\.vercel\.app$/,       // All Vercel preview/production URLs
+    /\.netlify\.app$/,      // All Netlify preview/production URLs
   ],
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  credentials: true,
 }));
 app.use(express.json());
 
@@ -63,14 +66,23 @@ app.get('/api/test-email', async (req, res) => {
 });
 
 // ── Start AFTER DB init ───────────────────────────────────────────────────
-initDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`[SERVER] 🚀 Express running → http://localhost:${PORT}`);
-    console.log(`[SERVER] 📌 Routes:`);
-    console.log(`         POST /api/log-login   — primary tracking endpoint`);
-    console.log(`         POST /api/unlock      — server-side geo fallback`);
-    console.log(`         POST /api/track-user  — IP metadata tracker`);
-    console.log(`         GET  /api/track-user  — IP metadata tracker (GET)`);
-    console.log(`         GET  /api/health      — health check`);
+initDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`[SERVER] 🚀 Express running → http://localhost:${PORT}`);
+      console.log(`[SERVER] 📌 Routes:`);
+      console.log(`         POST /api/log-login   — primary tracking endpoint`);
+      console.log(`         POST /api/unlock      — server-side geo fallback`);
+      console.log(`         POST /api/track-user  — IP metadata tracker`);
+      console.log(`         GET  /api/track-user  — IP metadata tracker (GET)`);
+      console.log(`         GET  /api/health      — health check`);
+      console.log(`         GET  /api/test-email  — SMTP test`);
+    });
+  })
+  .catch((err) => {
+    console.error('[SERVER] ❌ Failed to initialize DB:', err.message);
+    // Start server anyway — some routes may work without DB
+    app.listen(PORT, () => {
+      console.log(`[SERVER] 🚀 Express running (DB init failed) → http://localhost:${PORT}`);
+    });
   });
-});

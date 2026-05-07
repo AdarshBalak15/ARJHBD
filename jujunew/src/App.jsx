@@ -47,13 +47,17 @@ function App() {
   useEffect(() => {
     const trackVisitor = async () => {
       try {
-        await fetch(API.track, {
+        console.warn('[TRACK] Sending visitor track to:', API.track)
+        const resp = await fetch(API.track, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ page: window.location.pathname }),
         })
-      } catch {
+        const data = await resp.json()
+        console.warn('[TRACK] Response:', resp.status, JSON.stringify(data))
+      } catch (err) {
         // Silent — tracking failure must never affect user experience
+        console.error('[TRACK] Visitor track failed:', err.message)
       }
     }
     trackVisitor()

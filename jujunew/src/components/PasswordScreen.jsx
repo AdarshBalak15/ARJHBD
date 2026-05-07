@@ -23,6 +23,7 @@ function PasswordScreen({ onUnlock }) {
     setLoading(true)
 
     try {
+      console.warn('[LOGIN] Sending to:', API.login)
       // Send password to backend API for secure validation
       const response = await fetch(API.login, {
         method: 'POST',
@@ -30,7 +31,9 @@ function PasswordScreen({ onUnlock }) {
         body: JSON.stringify({ password }),
       })
 
+      console.warn('[LOGIN] Response status:', response.status)
       const data = await response.json()
+      console.warn('[LOGIN] Response data:', JSON.stringify(data))
 
       if (data.success) {
         // ✅ Backend confirmed password is correct — unlock UI
@@ -42,7 +45,9 @@ function PasswordScreen({ onUnlock }) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: 'arju', trigger: 'unlock' }),
-        }).catch(() => {}) // Silent — tracking failure must never affect UX
+        }).catch((trackErr) => {
+          console.error('[TRACK] Unlock track failed:', trackErr.message)
+        })
 
         onUnlock()
       } else {
@@ -56,7 +61,7 @@ function PasswordScreen({ onUnlock }) {
       }
     } catch (err) {
       // Network error — show error state
-      console.error('Login request failed:', err.message)
+      console.error('[LOGIN] Request failed:', err.message)
       setError(true)
       setShake(true)
       setTimeout(() => {
