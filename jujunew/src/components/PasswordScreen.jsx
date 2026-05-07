@@ -38,16 +38,36 @@ function PasswordScreen({ onUnlock }) {
       if (data.success) {
         // ✅ Backend confirmed password is correct — unlock UI
 
-        // 🔒 Track unlock event in user_tracking table (fire-and-forget)
+        // 🔒 Track unlock event in user_tracking table (resilient, non-blocking)
         // Uses the same tracking endpoint that handles page-load visits,
         // but with trigger='unlock' so the record is distinguishable.
-        fetch(API.track, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: 'arju', trigger: 'unlock' }),
-        }).catch((trackErr) => {
-          console.error('[TRACK] Unlock track failed:', trackErr.message)
-        })
+        // Retries up to 3 times on failure.
+        ;(async () => {
+          for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+              console.warn(`[TRACK] Unlock attempt ${attempt}/3 → ${API.track}`)
+              const resp = await fetch(API.track, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: 'arju', trigger: 'unlock' }),
+              })
+              const result = await resp.json()
+              console.warn('[TRACK] Unlock response:', resp.status, JSON.stringify(result))
+              if (result.tracked) {
+                console.warn('[TRACK] ✅ Unlock tracked successfully')
+                return
+              }
+              // Non-retriable DB errors — stop immediately
+              if (result.db_error === 'RLS_BLOCKED' || result.db_error === 'SCHEMA_MISMATCH') {
+                console.error('[TRACK] ❌ Non-retriable:', result.db_error)
+                return
+              }
+            } catch (trackErr) {
+              console.error(`[TRACK] Unlock attempt ${attempt} failed:`, trackErr.message)
+            }
+            if (attempt < 3) await new Promise(r => setTimeout(r, 1000 * attempt))
+          }
+        })()
 
         onUnlock()
       } else {

@@ -37,28 +37,58 @@ function App() {
   }, [])
 
   // ── Automatic Visitor Tracking ──────────────────────────────────────────
-  // Fires ONCE on page load. Calls Netlify serverless function which:
-  //   1. Extracts real client IP from Netlify headers
+  // Fires ONCE on page load. Calls serverless function which:
+  //   1. Extracts real client IP from platform headers
   //   2. Fetches geolocation (city, region, country, lat/lon, timezone)
   //   3. Parses user-agent (browser, OS, device type)
   //   4. Inserts everything into Supabase user_tracking table
   //
-  // Fire-and-forget: never blocks UI, never shows errors to user.
+  // Includes retry logic for resilience. Never blocks UI.
   useEffect(() => {
-    const trackVisitor = async () => {
-      try {
-        console.warn('[TRACK] Sending visitor track to:', API.track)
-        const resp = await fetch(API.track, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ page: window.location.pathname }),
-        })
-        const data = await resp.json()
-        console.warn('[TRACK] Response:', resp.status, JSON.stringify(data))
-      } catch (err) {
-        // Silent — tracking failure must never affect user experience
-        console.error('[TRACK] Visitor track failed:', err.message)
+    const trackVisitor = async (retries = 3) => {
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+          console.warn(`[TRACK] Attempt ${attempt}/${retries} → ${API.track}`)
+          const resp = await fetch(API.track, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ page: window.location.pathname }),
+          })
+          const data = await resp.json()
+          console.warn('[TRACK] Response:', resp.status, JSON.stringify(data))
+
+          // Inspect backend result for actionable errors
+          if (data.tracked) {
+            console.warn('[TRACK] ✅ Visitor tracked successfully')
+            return // Success — done
+          }
+
+          // Backend returned but DB insert failed
+          if (data.db_error) {
+            console.error('[TRACK] ⚠️ DB error:', data.db_error, data.db_details || '')
+            // RLS and schema errors won't resolve with retries
+            if (data.db_error === 'RLS_BLOCKED' || data.db_error === 'SCHEMA_MISMATCH') {
+              console.error('[TRACK] ❌ Non-retriable error — fix Supabase config')
+              return
+            }
+          }
+
+          // Retriable failure — continue loop
+          if (attempt < retries) {
+            const delay = Math.min(1000 * attempt, 3000)
+            console.warn(`[TRACK] Retrying in ${delay}ms...`)
+            await new Promise(r => setTimeout(r, delay))
+          }
+        } catch (err) {
+          // Network error — retry
+          console.error(`[TRACK] Attempt ${attempt} network error:`, err.message)
+          if (attempt < retries) {
+            const delay = Math.min(1000 * attempt, 3000)
+            await new Promise(r => setTimeout(r, delay))
+          }
+        }
       }
+      console.error('[TRACK] ❌ All retry attempts exhausted')
     }
     trackVisitor()
   }, [])
