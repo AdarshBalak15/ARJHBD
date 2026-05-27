@@ -13,17 +13,39 @@ const { parseDevice } = require("./utils/deviceParser.cjs");
 const { safeInsert } = require("./utils/dbInsert.cjs");
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CORS — restrict to known origins (not wildcard)
+// ─────────────────────────────────────────────────────────────────────────────
+const ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "http://localhost:4173",
+];
+
+function getCorsOrigin(reqOrigin) {
+  if (!reqOrigin) return null;
+  if (ALLOWED_ORIGINS.includes(reqOrigin)) return reqOrigin;
+  if (/\.vercel\.app$/.test(reqOrigin)) return reqOrigin;
+  if (/\.netlify\.app$/.test(reqOrigin)) return reqOrigin;
+  return null;
+}
+
+// HTML entity escaping for email template safety
+function escapeHtml(str) {
+  if (typeof str !== "string") return String(str != null ? str : "");
+  return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Email Alert
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function sendLoginEmail({ ip, city, region, country, latitude, longitude, timezone, device_info, timestamp, status }) {
   if (process.env.ALERT_EMAIL_ENABLED !== "true") { console.log("[EMAIL] Disabled"); return false; }
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) { console.error("[EMAIL] Missing SMTP creds"); return false; }
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) { console.error("[EMAIL] Missing SMTP credentials (check env vars)"); return false; }
   try {
     var transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com", port: 587, secure: false,
+      host: process.env.SMTP_HOST || "smtp.gmail.com", port: parseInt(process.env.SMTP_PORT || "587", 10), secure: false,
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-      tls: { rejectUnauthorized: false },
+      tls: { rejectUnauthorized: true },
       connectionTimeout: 8000, greetingTimeout: 8000, socketTimeout: 10000,
     });
     await transporter.verify();
@@ -32,12 +54,17 @@ async function sendLoginEmail({ ip, city, region, country, latitude, longitude, 
     var isOk = status === "SUCCESS";
     var tz = (timezone && timezone !== "unknown") ? timezone : "Asia/Kolkata";
     var timeStr = formatTime(timestamp, tz, { preset: "full" });
-    var loc = [city, region, country].filter(function (v) { return v && v !== "unknown"; }).join(", ") || "Unknown location";
-    var mapsLink = (latitude != null && longitude != null) ? "https://www.google.com/maps?q=" + latitude + "," + longitude : null;
+    // Sanitize all user-controlled values for HTML email template
+    var safeIp = escapeHtml(ip || "unknown");
+    var safeLoc = escapeHtml([city, region, country].filter(function (v) { return v && v !== "unknown"; }).join(", ") || "Unknown location");
+    var safeTz = escapeHtml(timezone || "unknown");
+    var safeDevice = escapeHtml((device_info || "unknown").slice(0, 150));
+    var safeTime = escapeHtml(timeStr);
+    var mapsLink = (latitude != null && longitude != null) ? "https://www.google.com/maps?q=" + Number(latitude) + "," + Number(longitude) : null;
     var mapsRow = mapsLink ? '<tr><td style="padding:10px 16px;color:#6b7280;">📍 Map</td><td style="padding:10px 16px;"><a href="' + mapsLink + '" target="_blank" style="color:#2563eb;">View on Google Maps ↗</a></td></tr>' : "";
     var headerBg = isOk ? "linear-gradient(135deg,#1e293b 0%,#0f172a 100%)" : "linear-gradient(135deg,#dc2626 0%,#991b1b 100%)";
     var badge = isOk ? '<span style="background:#16a34a;color:#fff;padding:3px 10px;border-radius:12px;font-size:0.8rem;font-weight:600;">✅ SUCCESS</span>' : '<span style="background:rgba(255,255,255,0.2);color:#fff;padding:3px 10px;border-radius:12px;font-size:0.8rem;font-weight:600;">❌ FAILED</span>';
-    var html = '<div style="font-family:\'Segoe UI\',Arial,sans-serif;max-width:540px;margin:0 auto;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;"><div style="background:' + headerBg + ';padding:22px 28px;text-align:center;"><h2 style="color:#fff;margin:0 0 8px;font-size:1.25rem;">' + (isOk ? "🔓 Login Activity" : "⚠️ Failed Login") + '</h2>' + badge + '</div><div style="padding:0;background:#fff;"><table style="width:100%;border-collapse:collapse;font-size:0.92rem;"><tr style="background:#f9fafb;"><td style="padding:10px 16px;color:#6b7280;width:35%;">🌐 IP</td><td style="padding:10px 16px;font-family:monospace;">' + (ip || "unknown") + '</td></tr><tr><td style="padding:10px 16px;color:#6b7280;">📍 Location</td><td style="padding:10px 16px;">' + loc + '</td></tr><tr style="background:#f9fafb;"><td style="padding:10px 16px;color:#6b7280;">🕐 Timezone</td><td style="padding:10px 16px;">' + (timezone || "unknown") + '</td></tr><tr><td style="padding:10px 16px;color:#6b7280;">💻 Device</td><td style="padding:10px 16px;word-break:break-all;font-size:0.85rem;">' + ((device_info || "unknown").slice(0, 150)) + '</td></tr><tr style="background:#f9fafb;"><td style="padding:10px 16px;color:#6b7280;">⏰ Time</td><td style="padding:10px 16px;font-weight:600;">' + timeStr + '</td></tr>' + mapsRow + '</table></div><div style="padding:12px 24px;background:#f8fafc;text-align:center;border-top:1px solid #e5e7eb;"><p style="margin:0;color:#94a3b8;font-size:0.75rem;">ARJHBD Security • Netlify</p></div></div>';
+    var html = '<div style="font-family:\'Segoe UI\',Arial,sans-serif;max-width:540px;margin:0 auto;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;"><div style="background:' + headerBg + ';padding:22px 28px;text-align:center;"><h2 style="color:#fff;margin:0 0 8px;font-size:1.25rem;">' + (isOk ? "🔓 Login Activity" : "⚠️ Failed Login") + '</h2>' + badge + '</div><div style="padding:0;background:#fff;"><table style="width:100%;border-collapse:collapse;font-size:0.92rem;"><tr style="background:#f9fafb;"><td style="padding:10px 16px;color:#6b7280;width:35%;">🌐 IP</td><td style="padding:10px 16px;font-family:monospace;">' + safeIp + '</td></tr><tr><td style="padding:10px 16px;color:#6b7280;">📍 Location</td><td style="padding:10px 16px;">' + safeLoc + '</td></tr><tr style="background:#f9fafb;"><td style="padding:10px 16px;color:#6b7280;">🕐 Timezone</td><td style="padding:10px 16px;">' + safeTz + '</td></tr><tr><td style="padding:10px 16px;color:#6b7280;">💻 Device</td><td style="padding:10px 16px;word-break:break-all;font-size:0.85rem;">' + safeDevice + '</td></tr><tr style="background:#f9fafb;"><td style="padding:10px 16px;color:#6b7280;">⏰ Time</td><td style="padding:10px 16px;font-weight:600;">' + safeTime + '</td></tr>' + mapsRow + '</table></div><div style="padding:12px 24px;background:#f8fafc;text-align:center;border-top:1px solid #e5e7eb;"><p style="margin:0;color:#94a3b8;font-size:0.75rem;">ARJHBD Security • Netlify</p></div></div>';
 
     await transporter.sendMail({
       from: '"🔐 Login Security" <' + process.env.SMTP_USER + '>',
@@ -57,18 +84,23 @@ async function sendLoginEmail({ ip, city, region, country, latitude, longitude, 
 // CORS Headers
 // ─────────────────────────────────────────────────────────────────────────────
 
-const corsHeaders = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+function getCorsHeaders(event) {
+  var origin = getCorsOrigin(event.headers.origin || event.headers.Origin);
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": origin || "",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Vary": "Origin",
+  };
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Handler
 // ─────────────────────────────────────────────────────────────────────────────
 
 exports.handler = async (event) => {
+  var corsHeaders = getCorsHeaders(event);
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: corsHeaders, body: "" };
   }

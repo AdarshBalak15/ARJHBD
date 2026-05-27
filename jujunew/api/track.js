@@ -21,11 +21,29 @@ import { geoLookup } from './utils/geoLookup.js';
 import { parseDevice } from './utils/deviceParser.js';
 import { safeInsert } from './utils/dbInsert.js';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CORS — restrict to known origins (not wildcard)
+// ─────────────────────────────────────────────────────────────────────────────
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+];
+
+function getCorsOrigin(reqOrigin) {
+  if (!reqOrigin) return null;
+  if (ALLOWED_ORIGINS.includes(reqOrigin)) return reqOrigin;
+  if (/\.vercel\.app$/.test(reqOrigin)) return reqOrigin;
+  if (/\.netlify\.app$/.test(reqOrigin)) return reqOrigin;
+  return null;
+}
+
 export default async function handler(req, res) {
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // CORS — restrict to known origins
+  const origin = getCorsOrigin(req.headers.origin);
+  if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Vary', 'Origin');
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   try {

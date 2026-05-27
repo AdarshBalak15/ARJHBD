@@ -9,14 +9,35 @@ const { geoLookup } = require("./utils/geoLookup.cjs");
 const { parseDevice } = require("./utils/deviceParser.cjs");
 const { safeInsert } = require("./utils/dbInsert.cjs");
 
-const corsHeaders = {
-  "Content-Type": "application/json",
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+// ─────────────────────────────────────────────────────────────────────────────
+// CORS — restrict to known origins (not wildcard)
+// ─────────────────────────────────────────────────────────────────────────────
+const ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "http://localhost:4173",
+];
+
+function getCorsOrigin(reqOrigin) {
+  if (!reqOrigin) return null;
+  if (ALLOWED_ORIGINS.includes(reqOrigin)) return reqOrigin;
+  if (/\.vercel\.app$/.test(reqOrigin)) return reqOrigin;
+  if (/\.netlify\.app$/.test(reqOrigin)) return reqOrigin;
+  return null;
+}
+
+function getCorsHeaders(event) {
+  var origin = getCorsOrigin(event.headers.origin || event.headers.Origin);
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": origin || "",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Vary": "Origin",
+  };
+}
 
 exports.handler = async (event) => {
+  var corsHeaders = getCorsHeaders(event);
   if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: corsHeaders, body: "" };
 
   try {
